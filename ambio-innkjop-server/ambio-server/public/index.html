@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ambio Innkjøp og varer</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+:root{--bg:#F7F6F3;--sur:#FFF;--sur2:#F2F1EE;--bdr:rgba(0,0,0,.09);--bdrm:rgba(0,0,0,.14);--txt:#1A1A18;--txt2:#5C5C56;--txt3:#9A9A92;--br:#1B5E3B;--brl:#E8F4EE;--brm:#3B6D11;--acl:#FDF5DC;--dn:#B91C1C;--dnl:#FEF2F2;--wn:#B45309;--wnl:#FFFBEB;--in:#1D4ED8;--inl:#EFF6FF;--r:10px;--rs:6px;--font:'DM Sans',system-ui,sans-serif;--mono:'DM Mono',monospace;--sh:0 1px 3px rgba(0,0,0,.06);--shmd:0 4px 16px rgba(0,0,0,.1)}
+@media(prefers-color-scheme:dark){:root{--bg:#111110;--sur:#1C1C1A;--sur2:#242422;--bdr:rgba(255,255,255,.08);--bdrm:rgba(255,255,255,.13);--txt:#EDEDE8;--txt2:#9A9A8E;--txt3:#5C5C52;--br:#4ADE80;--brl:#052E16;--brm:#86EFAC;--dnl:#1A0505;--wnl:#1C1005;--inl:#0A1628}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.app{display:flex;height:100vh;overflow:hidden}
+.sb{width:218px;background:var(--sur);border-right:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0;transition:width .2s;overflow:hidden}
+.sb.c{width:58px}
+.sb-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 12px;border-bottom:1px solid var(--bdr);gap:8px}
+.logo{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--br);line-height:1.25;white-space:nowrap;overflow:hidden}
+.logo .ti{font-size:22px;flex-shrink:0}
+.logo small{font-weight:400;color:var(--txt2);font-size:11px;display:block}
+.sb-tog{background:none;border:none;cursor:pointer;color:var(--txt3);padding:4px;border-radius:var(--rs);font-size:16px;flex-shrink:0}
+.sb-tog:hover{color:var(--txt)}
+.conn-pill{display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:11px;font-weight:500;border-bottom:1px solid var(--bdr);overflow:hidden;white-space:nowrap}
+.conn-pill.ok{color:var(--brm);background:var(--brl)}
+.conn-pill.err{color:var(--dn);background:var(--dnl)}
+.conn-pill.loading{color:var(--txt3);background:var(--sur2)}
+.sb-nav{flex:1;padding:8px 0;overflow-y:auto;overflow-x:hidden}
+.nav-sec{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);padding:12px 12px 3px;white-space:nowrap}
+.nav-btn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 12px;font-size:13px;font-family:var(--font);color:var(--txt2);background:none;border:none;cursor:pointer;text-align:left;transition:background .12s,color .12s;white-space:nowrap;overflow:hidden}
+.nav-btn .ti{font-size:16px;flex-shrink:0}
+.nav-btn:hover{background:var(--sur2);color:var(--txt)}
+.nav-btn.act{background:var(--brl);color:var(--br);font-weight:500}
+.nav-bdg{margin-left:auto;background:var(--wnl);color:var(--wn);font-size:10px;font-weight:600;padding:2px 6px;border-radius:20px;flex-shrink:0}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.ph{background:var(--sur);border-bottom:1px solid var(--bdr);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:10;gap:12px}
+.ph-title{font-size:15px;font-weight:600;white-space:nowrap}
+.ph-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pb{padding:18px 22px}
+.mg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+@media(max-width:860px){.mg{grid-template-columns:repeat(2,1fr)}}
+.mc{background:var(--sur2);border-radius:var(--r);padding:13px 15px}
+.ml{font-size:11px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.mv{font-size:22px;font-weight:600;letter-spacing:-.5px}
+.ms{font-size:11px;color:var(--txt3);margin-top:2px}
+.ms.ok{color:var(--brm)}.ms.warn{color:var(--wn)}.ms.danger{color:var(--dn)}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.dt{width:100%;border-collapse:collapse;font-size:13px}
+.dt th{text-align:left;padding:9px 14px;font-size:11px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;background:var(--sur2);border-bottom:1px solid var(--bdr);white-space:nowrap}
+.dt td{padding:11px 14px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt tbody tr{transition:background .1s}
+.dt tbody tr:hover td{background:var(--sur2)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;font-size:13px;font-family:var(--font);font-weight:500;border-radius:var(--rs);border:1px solid var(--bdrm);background:var(--sur);color:var(--txt);cursor:pointer;transition:background .12s;white-space:nowrap}
+.btn:hover{background:var(--sur2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.bp{background:var(--br);color:#fff;border-color:transparent}.bp:hover{opacity:.88;background:var(--br)}
+.bd{background:var(--dnl);color:var(--dn);border-color:rgba(185,28,28,.2)}.bd:hover{background:#FEE2E2}
+.bs{background:var(--brl);color:var(--br);border-color:rgba(27,94,59,.2)}
+.bi{background:var(--inl);color:var(--in);border-color:rgba(29,78,216,.2)}
+.bsm{padding:5px 10px;font-size:12px}.bic{padding:7px;gap:0}
+.bdg{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.bok{background:var(--brl);color:var(--br)}.bwn{background:var(--wnl);color:var(--wn)}.bdn{background:var(--dnl);color:var(--dn)}.bin{background:var(--inl);color:var(--in)}.bgr{background:var(--sur2);color:var(--txt2)}
+.al{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--rs);margin-bottom:14px;font-size:13px}
+.al .ti{font-size:15px;margin-top:1px;flex-shrink:0}
+.al.warn{background:var(--wnl);color:var(--wn);border:1px solid rgba(180,83,9,.2)}
+.al.info{background:var(--inl);color:var(--in);border:1px solid rgba(29,78,216,.2)}
+.al.ok{background:var(--brl);color:var(--br);border:1px solid rgba(27,94,59,.2)}
+.shd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.stt{font-size:13px;font-weight:600}
+.fg{margin-bottom:13px}
+.fl{font-size:12px;font-weight:600;color:var(--txt2);margin-bottom:4px;display:block}
+.fi{width:100%;padding:8px 10px;border:1px solid var(--bdrm);border-radius:var(--rs);background:var(--sur);color:var(--txt);font-size:13px;font-family:var(--font);transition:border-color .15s}
+.fi:focus{outline:none;border-color:var(--br)}
+.fsel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9A92' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;padding-right:26px}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.mod{background:var(--sur);border-radius:var(--r);box-shadow:var(--shmd);width:600px;max-width:100%;max-height:calc(100vh - 32px);overflow-y:auto}
+.mod-hd{padding:15px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mod-tl{font-size:15px;font-weight:600}
+.mod-bd{padding:18px}
+.mod-ft{padding:13px 18px;border-top:1px solid var(--bdr);display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.pol{border:1px solid var(--bdr);border-radius:var(--rs);overflow:hidden;margin-bottom:12px}
+.polr{display:grid;grid-template-columns:1fr 72px 110px 100px 34px;gap:8px;align-items:start;padding:9px 11px;border-bottom:1px solid var(--bdr)}
+.polr:last-child{border-bottom:none}
+.polr.hd{background:var(--sur2);align-items:center}
+.polr.hd span{font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em}
+.period-preset{display:flex;gap:6px;flex-wrap:wrap}
+.pp-btn{padding:5px 11px;font-size:12px;border-radius:20px;border:1px solid var(--bdrm);background:var(--sur);color:var(--txt2);cursor:pointer;font-family:var(--font);font-weight:500;transition:all .12s}
+.pp-btn:hover,.pp-btn.act{background:var(--brl);color:var(--br);border-color:rgba(27,94,59,.3)}
+.timeline{display:flex;align-items:center;gap:0;margin-bottom:18px;overflow-x:auto;padding:12px 16px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r)}
+.tl-step{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0}
+.tl-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid var(--bdr)}
+.tl-dot.done{background:var(--br);color:#fff;border-color:var(--br)}
+.tl-dot.active{background:var(--wn);color:#fff;border-color:var(--wn)}
+.tl-dot.pending{background:var(--sur2);color:var(--txt3);border-color:var(--bdr)}
+.tl-dot.rejected{background:var(--dn);color:#fff;border-color:var(--dn)}
+.tl-label{font-size:10px;color:var(--txt3);text-align:center;max-width:60px;line-height:1.2}
+.tl-line{height:2px;flex:1;min-width:20px;background:var(--bdr);margin-bottom:16px}
+.tl-line.done{background:var(--br)}
+.sup-card{display:flex;gap:12px;padding:12px;background:var(--sur2);border-radius:var(--rs);margin-bottom:12px}
+.sup-card .ti{font-size:26px;color:var(--txt3);flex-shrink:0;margin-top:2px}
+.sup-nm{font-size:14px;font-weight:600;margin-bottom:3px}
+.sup-row{font-size:12px;color:var(--txt2);display:flex;align-items:center;gap:5px;margin-top:2px}
+.sup-row .ti{font-size:13px;color:var(--txt3)}
+.nc{position:fixed;bottom:18px;right:18px;z-index:300;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.nf{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--sur);border:1px solid var(--bdrm);border-radius:var(--r);box-shadow:var(--shmd);font-size:13px;max-width:340px;pointer-events:all;animation:si .2s ease}
+.nf.success{border-left:3px solid var(--br)}.nf.error{border-left:3px solid var(--dn)}.nf.warning{border-left:3px solid var(--wn)}.nf.info{border-left:3px solid var(--in)}
+@keyframes si{from{transform:translateX(16px);opacity:0}to{transform:translateX(0);opacity:1}}
+.hi{display:flex;gap:11px;padding:11px 14px;border-bottom:1px solid var(--bdr)}.hi:last-child{border-bottom:none}
+.hd{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.spin{display:inline-block;animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:52px 24px;color:var(--txt3)}.empty .ti{font-size:40px;display:block;margin-bottom:10px}.empty p{font-size:13px}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdrm);border-radius:3px}
+.f{display:flex}.ic{align-items:center}.g2{gap:8px}.g3{gap:12px}.mla{margin-left:auto}
+.tsm{font-size:12px}.tm{color:var(--txt2)}.txs{font-size:11px}.fmo{font-family:var(--mono)}.fsb{font-weight:600}.fw5{font-weight:500}
+.tr{text-align:right}.w100{width:100%}
+
+/* Stats page */
+.stat-tabs{display:flex;gap:0;border-bottom:1px solid var(--bdr);margin-bottom:18px;background:var(--sur);border-radius:var(--r) var(--r) 0 0;overflow:hidden}
+.stat-tab{padding:10px 18px;font-size:13px;font-weight:500;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font);transition:color .15s,border-color .15s;white-space:nowrap}
+.stat-tab.act{color:var(--br);border-bottom-color:var(--br);font-weight:600}
+.stat-tab:hover{color:var(--txt)}
+.period-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;padding:12px 16px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r)}
+.period-row label{font-size:12px;font-weight:600;color:var(--txt2)}
+.period-row .fi{width:auto;padding:6px 10px;font-size:13px}
+.period-preset{display:flex;gap:6px;flex-wrap:wrap}
+.pp-btn{padding:5px 11px;font-size:12px;border-radius:20px;border:1px solid var(--bdrm);background:var(--sur);color:var(--txt2);cursor:pointer;font-family:var(--font);font-weight:500;transition:all .12s}
+.pp-btn:hover,.pp-btn.act{background:var(--brl);color:var(--br);border-color:var(--br)}
+.compare-badge{font-size:11px;padding:2px 8px;border-radius:12px;font-weight:600;margin-left:6px}
+.up{background:#E8F4EE;color:#1B5E3B}.down{background:#FEF2F2;color:#B91C1C}.neutral{background:var(--sur2);color:var(--txt3)}
+.chart-wrap{width:100%;height:300px;margin-bottom:4px}
+.chart-wrap-tall{width:100%;height:380px;margin-bottom:4px}
+.rank-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bdr)}
+.rank-row:last-child{border-bottom:none}
+.rank-num{width:24px;height:24px;border-radius:50%;background:var(--sur2);color:var(--txt3);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rank-num.top{background:var(--brl);color:var(--br)}
+.rank-bar-wrap{flex:1;min-width:0}
+.rank-label{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.rank-bar-bg{height:5px;background:var(--bdr);border-radius:3px;overflow:hidden}
+.rank-bar-fill{height:100%;border-radius:3px;transition:width .4s ease;background:var(--br)}
+.rank-val{font-size:12px;font-family:var(--mono);font-weight:600;flex-shrink:0;text-align:right;min-width:90px}
+.rank-sub{font-size:11px;color:var(--txt3)}
+.empty-stats{text-align:center;padding:52px 24px;color:var(--txt3)}
+.empty-stats .ti{font-size:42px;display:block;margin-bottom:10px}
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+@media(max-width:700px){.cmp-grid{grid-template-columns:1fr}}
+.cmp-card{background:var(--sur2);border-radius:var(--r);padding:14px 16px}
+.cmp-label{font-size:11px;color:var(--txt3);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.cmp-val{font-size:22px;font-weight:600;letter-spacing:-.5px}
+.cmp-diff{font-size:12px;margin-top:4px;display:flex;align-items:center;gap:5px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback, useContext, createContext } = React;
+
+const kr = n => `kr ${Number(n||0).toLocaleString('nb-NO',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+const fmtDate = d => d?new Date(d).toLocaleDateString('nb-NO',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+const fmtTs = d => d?new Date(d).toLocaleString('nb-NO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+const dotColors={po_created:'#3B6D11',po_submitted:'#1D4ED8',approved:'#3B6D11',sync:'#1D4ED8',stock_update:'#1D4ED8',low_stock:'#B45309',denied:'#B91C1C'};
+
+const pogo = {
+  async get(path){ const r=await fetch('/api/pogo'+path); if(!r.ok){const t=await r.text().catch(()=>r.statusText);throw new Error(`${r.status}: ${t}`)} return r.status===204?null:r.json(); },
+  async status(){ const r=await fetch('/api/status'); if(!r.ok) throw new Error(`Server utilgjengelig (${r.status})`); const d=await r.json(); if(!d.ok) throw new Error(d.error||'Ukjent feil'); return d; }
+};
+
+/* Normalize POGO supplier object to consistent internal fields.
+   POGO uses: LegalName, EmailAddress, MailAddress, PhoneNumber, ExternalNumber etc. */
+function normalizeSupplier(s) {
+  const addr = s.MailAddress || s.PostalAddress || s.visitAddress || {};
+  return {
+    ...s, // keep all original fields for debug
+    // Normalized display fields:
+    id:                 s.Id ?? s.id,
+    name:               s.LegalName || s.Name || s.name || s.ContactName || `ID ${s.Id||s.id}`,
+    supplierNumber:     s.ExternalNumber || s.SupplierNo || s.supplierNumber || s.supplierNo || '',
+    organizationNumber: s.OrganizationNumber || s.VatNumber || s.organizationNumber || '',
+    emailAddress:       s.EmailAddress || s.Email || s.emailAddress || '',
+    phoneNumber:        s.PhoneNumber || s.Phone || s.phoneNumber || '',
+    streetAddress:      addr.AddressLine1 || addr.Street || s.streetAddress || '',
+    zipCode:            addr.PostCode || addr.ZipCode || s.zipCode || '',
+    city:               addr.City || s.city || '',
+    countryName:        addr.Country || s.countryName || '',
+    isInactive:         s.IsArchived || s.IsInactive || s.isInactive || false,
+    paymentTermName:    s.PaymentTermName || s.paymentTermName || '',
+    currencyCode:       s.CurrencyCode || s.currencyCode || '',
+    bankAccountNumber:  s.BankAccountNumber || s.bankAccountNumber || '',
+  };
+}
+
+/* Normalize POGO product object.
+   Confirmed POGO field names from API:
+   Code, Name, Description, UnitCost, UnitPrice,
+   StockOnHand, StockAvailable, ProductGroupCode, UnitOfMeasureCode, IsArchived */
+function normalizeProduct(p) {
+  return {
+    ...p,
+    id:                p.Id ?? p.id,
+    name:              p.Name || p.name || `ID ${p.Id||p.id}`,
+    code:              p.Code || p.code || '',
+    description:       p.Description || p.description || '',
+    productGroupName:  p.ProductGroupCode || p.ProductGroupName || p.productGroupName || '',
+    costPrice:         p.UnitCost ?? p.CostPrice ?? p.costPrice ?? null,
+    salesPrice:        p.UnitPrice ?? p.SalesPrice ?? p.salesPrice ?? null,
+    stockOnHand:       p.StockOnHand ?? p.stockOnHand ?? null,
+    availableQuantity: p.StockAvailable ?? p.AvailableQuantity ?? p.availableQuantity ?? null,
+    unitOfMeasureType: p.UnitOfMeasureCode || p.UnitOfMeasureType || p.unitOfMeasureType || 'stk',
+    isArchived:        p.IsArchived ?? p.isArchived ?? false,
+  };
+}
+
+const Ctx = createContext(null);
+
+function AppProvider({children}){
+  const [conn,setConn]=useState('loading');
+  const [connErr,setConnErr]=useState('');
+  const [products,setProducts]=useState([]);
+  const [suppliers,setSuppliers]=useState([]);
+  const [orders,setOrders]=useState([]);
+  const [history,setHistory]=useState([]);
+  const [notifs,setNotifs]=useState([]);
+  const [loading,setLoading]=useState({});
+  const [dbReady,setDbReady]=useState(false);
+  const [spApproved,setSpApproved]=useState({}); // {supplierName: true/false/null}
+  const [spData,setSpData]=useState({}); // full SP record per supplier
+  const [spConfigured,setSpConfigured]=useState(false);
+  const [spLoading,setSpLoading]=useState(false);
+
+  const notify=useCallback((message,type='info')=>{
+    const id=Date.now();
+    setNotifs(n=>[{id,message,type},...n.slice(0,5)]);
+    setTimeout(()=>setNotifs(n=>n.filter(x=>x.id!==id)),4500);
+  },[]);
+
+  const addHist=useCallback((type,text,user='System',ts=null)=>{
+    const entry={id:String(Date.now()),type,text,user,ts:ts||new Date().toISOString()};
+    setHistory(h=>[entry,...h]);
+    // Persist to DB (fire and forget)
+    fetch('/api/history',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(entry)}).catch(()=>{});
+  },[]);
+
+  const load=useCallback((k,v)=>setLoading(l=>({...l,[k]:v})),[]);
+
+  const fetchProducts=useCallback(async()=>{
+    load('products',true);
+    try{
+      const data=await pogo.get('/Products');
+      const raw=Array.isArray(data)?data:(data?.data||[]);
+      const list=raw.map(normalizeProduct);
+      setProducts(list);
+      addHist('sync',`${list.length} produkter hentet fra PowerOffice Go`);
+      if(list.length===0) notify('Ingen produkter funnet i POGO. Sjekk at testprodukter er opprettet.','warning');
+    }catch(e){notify(`Produkthenting feilet: ${e.message}`,'error');}
+    finally{load('products',false);}
+  },[]);
+
+  const fetchSuppliers=useCallback(async()=>{
+    load('suppliers',true);
+    try{
+      const data=await pogo.get('/Suppliers');
+      const raw=Array.isArray(data)?data:(data?.data||[]);
+      const list=raw.map(normalizeSupplier);
+      setSuppliers(list);
+      addHist('sync',`${list.length} leverandører hentet fra PowerOffice Go`);
+    }catch(e){notify(`Leverandørhenting feilet: ${e.message}`,'error');}
+    finally{load('suppliers',false);}
+  },[]);
+
+  // Load orders + history from database
+  const loadFromDb=useCallback(async()=>{
+    try{
+      const [ordersRes, histRes] = await Promise.all([
+        fetch('/api/orders').then(r=>r.json()),
+        fetch('/api/history').then(r=>r.json()),
+      ]);
+      if(Array.isArray(ordersRes)) setOrders(ordersRes);
+      if(Array.isArray(histRes)) setHistory(histRes.map(h=>({...h,id:String(h.id)})));
+      setDbReady(true);
+      console.log(`[DB] Loaded ${ordersRes.length} orders, ${histRes.length} history entries`);
+    }catch(e){
+      console.error('[DB] Load failed:', e.message);
+      setDbReady(true); // continue even if DB fails
+    }
+  },[]);
+
+  const connect=useCallback(async()=>{
+    setConn('loading');
+    // Load persisted data first (fast, local)
+    await loadFromDb();
+    try{
+      await pogo.status();
+      setConn('ok');
+      // Persist connection event
+      fetch('/api/history',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({type:'sync',text:'Tilkoblet PowerOffice Go API',user:'System'})});
+      await Promise.all([fetchProducts(),fetchSuppliers()]);
+    }catch(e){setConn('error');setConnErr(e.message);}
+  },[loadFromDb]);
+
+  const createOrder=useCallback(async(order)=>{
+    const id=`INN-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
+    const payload={...order,id,status:'draft'};
+    try{
+      // Save to DB first
+      const r=await fetch('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      if(!r.ok) throw new Error(`DB save failed: ${r.status}`);
+      const saved=await r.json();
+      setOrders(prev=>[saved,...prev]);
+      addHist('po_created',`Innkjøpsordre opprettet — ${saved.id} (${saved.supplierName})`,'Deg');
+      notify(`Innkjøpsordre ${saved.id} opprettet`,'success');
+      return saved;
+    }catch(e){
+      // Fallback: local only if DB fails
+      notify(`Ordre opprettet lokalt (DB feil: ${e.message})`,'warning');
+      const fallback={...payload,created:new Date().toISOString(),lines:order.lines||[]};
+      setOrders(prev=>[fallback,...prev]);
+      return fallback;
+    }
+  },[]);
+
+
+  // Helper: persist order status change to DB
+  const patchOrder=useCallback(async(id, fields, histEntry=null)=>{
+    try{
+      const body={...fields};
+      if(histEntry) body.historyEntry=histEntry;
+      const r=await fetch(`/api/orders/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(r.ok){
+        const updated=await r.json();
+        setOrders(prev=>prev.map(o=>o.id===id?updated:o));
+        return updated;
+      }
+    }catch(e){ console.error('patchOrder failed:',e.message); }
+    // fallback: local only
+    return null;
+  },[]);
+
+  // Submit for approval
+  const submitForApproval=useCallback((orderId)=>{
+    const submittedAt=new Date().toISOString();
+    setOrders(prev=>prev.map(o=>o.id!==orderId?o:{...o,status:'pending_approval',submittedAt}));
+    patchOrder(orderId,{status:'pending_approval',submittedAt},
+      {type:'po_submitted',text:`Innkjøpsordre ${orderId} sendt til godkjenning`,user:'Deg'});
+    addHist('po_submitted',`Innkjøpsordre ${orderId} sendt til godkjenning`,'Deg');
+    notify(`Ordre ${orderId} sendt til godkjenning`,'info');
+  },[patchOrder]);
+
+  // Approve order
+  const approveOrder=useCallback((orderId,approver='Godkjenner')=>{
+    const approvedAt=new Date().toISOString();
+    setOrders(prev=>prev.map(o=>o.id!==orderId?o:{...o,status:'approved',approvedBy:approver,approvedAt}));
+    patchOrder(orderId,{status:'approved',approvedBy:approver,approvedAt},
+      {type:'approved',text:`Innkjøpsordre ${orderId} godkjent av ${approver}`,user:approver});
+    addHist('approved',`Innkjøpsordre ${orderId} godkjent av ${approver}`,approver);
+    notify(`Ordre ${orderId} godkjent!`,'success');
+  },[patchOrder]);
+
+  // Reject order
+  const rejectOrder=useCallback((orderId,reason='')=>{
+    const rejectedAt=new Date().toISOString();
+    setOrders(prev=>prev.map(o=>o.id!==orderId?o:{...o,status:'rejected',rejectedReason:reason,rejectedAt}));
+    patchOrder(orderId,{status:'rejected',rejectedReason:reason,rejectedAt},
+      {type:'denied',text:`Innkjøpsordre ${orderId} avvist${reason?': '+reason:''}`,user:'Godkjenner'});
+    addHist('denied',`Innkjøpsordre ${orderId} avvist${reason?': '+reason:''}`,'Godkjenner');
+    notify(`Ordre ${orderId} avvist`,'warning');
+  },[patchOrder]);
+
+  // Mark as sent to supplier
+  const sendOrder=useCallback((orderId)=>{
+    const sentAt=new Date().toISOString();
+    setOrders(prev=>prev.map(o=>o.id!==orderId?o:{...o,status:'ordered',sentAt}));
+    patchOrder(orderId,{status:'ordered',sentAt},
+      {type:'po_created',text:`Innkjøpsordre ${orderId} sendt til leverandør`,user:'Deg'});
+    addHist('po_created',`Innkjøpsordre ${orderId} sendt til leverandør`,'Deg');
+    notify(`Ordre ${orderId} sendt til leverandør`,'success');
+  },[patchOrder]);
+
+  // Receive goods — updates DB + local state, attempts POGO voucher sync
+  const receiveOrder=useCallback(async(orderId, receivedLines)=>{
+    const receivedAt=new Date().toISOString();
+    setOrders(prev=>prev.map(o=>o.id!==orderId?o:{...o,status:'received',receivedAt,receivedLines}));
+    addHist('approved',`Varer mottatt for ${orderId}`,'Deg');
+    // Persist received status to DB
+    patchOrder(orderId,{status:'received',receivedAt,receivedLines});
+
+    const results=[];
+    const pogoFailures=[];
+
+    for(const line of receivedLines){
+      if(!line.qtyReceived||line.qtyReceived<=0) continue;
+
+      // Always update local state immediately
+      setProducts(prev=>prev.map(p=>String(p.id)===String(line.productId)
+        ?{...p,stockOnHand:(p.stockOnHand||0)+Number(line.qtyReceived),availableQuantity:(p.availableQuantity||0)+Number(line.qtyReceived)}
+        :p));
+
+      if(!line.productId){
+        // Product not in POGO — local only, no API call
+        addHist('stock_update',`Lager oppdatert lokalt — ${line.productName}: +${line.qtyReceived} stk (ikke i POGO)`,'System');
+        continue;
+      }
+
+      try{
+        const r=await fetch('/api/stock/adjust',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({productId:line.productId,delta:line.qtyReceived,reason:`Mottak innkjøpsordre ${orderId}`})
+        });
+        const d=await r.json();
+        results.push({...line,...d});
+
+        // Update local state with POGO's confirmed stock if available
+        if(d.newStock!=null){
+          setProducts(prev=>prev.map(p=>String(p.id)===String(line.productId)
+            ?{...p,stockOnHand:d.newStock,availableQuantity:d.newStock}
+            :p));
+        }
+
+        if(d.success && d.method==='voucher'){
+          addHist('stock_update',`Lager oppdatert i POGO via bilag — ${line.productName}: +${line.qtyReceived} → ${d.newStock} stk ✓`,'System');
+          notify(`${line.productName}: Lager oppdatert i PowerOffice Go ✓`,'success');
+        } else {
+          // Local update done, POGO needs manual step
+          addHist('stock_update',`Lager oppdatert lokalt — ${line.productName}: +${line.qtyReceived} stk (${d.note||'Verifiser i POGO'})`,'System');
+          pogoFailures.push({name:line.productName,qty:line.qtyReceived,newStock:d.newStock,note:d.note,steps:d.manualSteps});
+        }
+      }catch(e){
+        addHist('stock_update',`Feil ved lageroppdatering for ${line.productName}: ${e.message}`,'System');
+        notify(`Lagerfeil: ${e.message}`,'error');
+      }
+    }
+
+    // Show single summary notification for POGO failures
+    if(pogoFailures.length>0){
+      notify(
+        `Lager oppdatert i appen for ${pogoFailures.length} produkt${pogoFailures.length>1?'er':''}. `+
+        `Oppdater lagertelling manuelt i POGO (Lager → Lagertelling).`,
+        'warning'
+      );
+      // Store manual steps on the order for display
+      setOrders(prev=>prev.map(o=>o.id!==orderId?o:{...o,pogoManualSteps:pogoFailures}));
+      // Persist manual steps to DB
+      patchOrder(orderId,{pogoManualSteps:pogoFailures});
+    }
+
+    setTimeout(()=>fetchProducts(),2500);
+    notify(`Mottak for ${orderId} registrert.`,'success');
+    return results;
+  },[fetchProducts]);
+
+  // Sync stock from POGO for all products
+  const syncStock=useCallback(async()=>{
+    try{
+      const r=await fetch('/api/stock/sync');
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d=await r.json();
+      const normalized=d.products.map(normalizeProduct);
+      setProducts(normalized);
+      addHist('sync',`Lagerstatus synkronisert fra PowerOffice Go (${normalized.length} produkter)`,'System');
+      notify(`Lager synkronisert fra POGO`,'success');
+    }catch(e){ notify(`Lagersynk feilet: ${e.message}`,'error'); }
+  },[]);
+
+  useEffect(()=>{connect();},[]);
+
+  // Fetch SharePoint approved suppliers list
+  const syncSharePoint=useCallback(async()=>{
+    setSpLoading(true);
+    try{
+      const r=await fetch('/api/sharepoint/approved-suppliers');
+      const d=await r.json();
+      if(d.ok){
+        // Build lookup map: name → approved (bool|null), also try orgNr
+        const map={};
+        const fullData={};
+        for(const s of d.suppliers){
+          const k=s.name?.toLowerCase().trim();
+          if(k){ map[k]=s.approved; fullData[k]=s; }
+          // OrgNr matching: strip spaces so '965 141 618' matches '965141618'
+          if(s.orgNr){
+            const orgClean=s.orgNr.replace(/\s/g,'');
+            if(orgClean){ map[orgClean]=s.approved; fullData[orgClean]=s; }
+          }
+        }
+        setSpApproved(map);
+        setSpData(fullData);
+        setSpConfigured(true);
+        notify(`SharePoint: ${d.suppliers.filter(s=>s.approved).length} godkjente leverandører lastet`,'success');
+        addHist('sync',`SharePoint-liste hentet: ${d.suppliers.length} leverandører (${d.listName})`,'System');
+      } else {
+        notify(`SharePoint: ${d.error}`,'error');
+        setSpConfigured(d.configured||false);
+      }
+    }catch(e){ notify(`SharePoint-feil: ${e.message}`,'error'); }
+    finally{ setSpLoading(false); }
+  },[notify,addHist]);
+
+  // Check SP config on startup
+  useEffect(()=>{
+    fetch('/api/sharepoint/config').then(r=>r.json()).then(d=>setSpConfigured(d.configured)).catch(()=>{});
+  },[]);
+
+  return <Ctx.Provider value={{conn,connErr,products,suppliers,orders,history,notifs,loading,dbReady,notify,addHist,fetchProducts,fetchSuppliers,createOrder,submitForApproval,approveOrder,rejectOrder,sendOrder,receiveOrder,syncStock,setProducts,patchOrder,spApproved,spData,spConfigured,spLoading,syncSharePoint}}>{children}</Ctx.Provider>;
+}
+const useApp=()=>useContext(Ctx);
+
+/* PDF */
+function printPDF(order){
+  const lines=order.lines||[];
+  const total=lines.reduce((s,l)=>s+(Number(l.qty)*Number(l.unitPrice)),0);
+  const vat=total*0.25;
+  const lineRows=lines.map(l=>`<tr><td>${l.productCode||''}</td><td>${l.productName}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${l.unit||'stk'}</td><td style="text-align:right">kr ${Number(l.unitPrice).toLocaleString('nb-NO',{minimumFractionDigits:2})}</td><td style="text-align:right"><strong>kr ${Number(l.qty*l.unitPrice).toLocaleString('nb-NO',{minimumFractionDigits:2})}</strong></td></tr>`).join('');
+  const html=`<!DOCTYPE html><html lang="nb"><head><meta charset="UTF-8"/><title>Innkjøpsordre ${order.id}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:0}.page{max-width:794px;margin:0 auto;padding:40px 48px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:18px;border-bottom:2.5px solid #1B5E3B}.co{font-size:20px;font-weight:700;color:#1B5E3B}.co-sub{font-size:11px;color:#666;margin-top:2px}.po-title{font-size:22px;font-weight:700;color:#1B5E3B;text-align:right}.po-meta{font-size:12px;color:#555;text-align:right;margin-top:4px}.addr{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:24px}.ab h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:7px}.ab .nm{font-size:13px;font-weight:600;margin-bottom:4px}.ab p{font-size:12px;color:#444;line-height:1.6}.ref{display:flex;gap:28px;margin-bottom:22px;padding:11px 14px;background:#f5f5f2;border-radius:6px}.ri label{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;display:block;margin-bottom:2px}.ri span{font-size:12px;font-weight:500}table{width:100%;border-collapse:collapse;margin-bottom:18px}thead tr{background:#1B5E3B;color:#fff}thead th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase}thead th:last-child,thead th:nth-child(3),thead th:nth-child(4),thead th:nth-child(5){text-align:right}tbody tr{border-bottom:1px solid #eee}tbody tr:nth-child(even){background:#fafaf8}tbody td{padding:9px 10px;font-size:12px}.tots{display:flex;justify-content:flex-end;margin-bottom:24px}.tb{width:240px;border:1px solid #e5e5e5;border-radius:6px;overflow:hidden}.tr2{display:flex;justify-content:space-between;padding:8px 13px;font-size:12px}.tr2.sub{color:#444;border-bottom:1px solid #eee}.tr2.vt{color:#777;border-bottom:1px solid #eee;font-size:11px}.tr2.gd{background:#1B5E3B;color:#fff;font-weight:700;font-size:13px}.notes{margin-bottom:24px}.notes h4{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:6px}.notes p{font-size:12px;color:#444;padding:10px 13px;background:#f5f5f2;border-radius:6px;line-height:1.6}.sigs{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:32px;padding-top:18px;border-top:1px solid #eee}.sig{border-top:1px solid #444;padding-top:5px;font-size:10px;color:#888}.foot{border-top:1px solid #e5e5e5;padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:16px}@media print{body{padding:0}@page{margin:0}}</style></head><body><div class="page"><div class="header"><div><div class="co">Ambio AS</div><div class="co-sub">Innkjøp og varer</div></div><div><div class="po-title">INNKJØPSORDRE</div><div class="po-meta">${order.id}<br/>Dato: ${fmtDate(order.created)}</div></div></div><div class="addr"><div class="ab"><h4>Fra (Kjøper)</h4><div class="nm">Ambio AS</div><p>Innkjøpsavdelingen<br/>E-post: innkjop@ambio.no<br/>Ref: ${order.buyerRef||'—'}</p></div><div class="ab"><h4>Til (Leverandør)</h4><div class="nm">${order.supplierName}</div><p>${(order.supplierAddress||'').replace(/\n/g,'<br/>')}${order.supplierEmail?'<br/>'+order.supplierEmail:''}${order.supplierPhone?'<br/>Tlf: '+order.supplierPhone:''}${order.supplierOrgNr?'<br/>Org.nr: '+order.supplierOrgNr:''}</p></div></div><div class="ref"><div class="ri"><label>Ordrenummer</label><span>${order.id}</span></div><div class="ri"><label>Ordredato</label><span>${fmtDate(order.created)}</span></div><div class="ri"><label>Ønsket levering</label><span>${order.deliveryDate?fmtDate(order.deliveryDate):'—'}</span></div><div class="ri"><label>Betalingsbet.</label><span>${order.paymentTerms||'Net 30'}</span></div></div><table><thead><tr><th>Kode</th><th>Beskrivelse</th><th>Ant.</th><th>Enhet</th><th>Kostpris</th><th>Beløp</th></tr></thead><tbody>${lineRows}</tbody></table><div class="tots"><div class="tb"><div class="tr2 sub"><span>Sum eks. MVA</span><span>kr ${Number(total).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div><div class="tr2 vt"><span>MVA 25%</span><span>kr ${Number(vat).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div><div class="tr2 gd"><span>TOTALT</span><span>kr ${Number(total+vat).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div></div></div>${order.notes?`<div class="notes"><h4>Merknader</h4><p>${order.notes}</p></div>`:''}<div class="sigs"><div class="sig">Godkjent av (dato og signatur)</div><div class="sig">Leverandørens bekreftelse</div></div><div class="foot"><span>Ambio AS — Innkjøpsordre ${order.id}</span><span>Generert ${new Date().toLocaleString('nb-NO')}</span></div></div></body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);
+}
+
+/* New Order Modal */
+function NewOrderModal({onClose}){
+  const {suppliers,products,createOrder,notify,spApproved,spConfigured}=useApp();
+  const [step,setStep]=useState(1);
+  const [sup,setSup]=useState(null);
+  const [lines,setLines]=useState([]);
+  const [det,setDet]=useState({buyerRef:'',deliveryDate:'',deliveryAddress:'Ambio AS',paymentTerms:'Net 30',notes:''});
+  const [sub,setSub]=useState(false);
+
+  const addLine=()=>setLines(l=>[...l,{productId:'',productName:'',productCode:'',qty:1,unitPrice:0,unit:'stk'}]);
+  const rmLine=i=>setLines(l=>l.filter((_,x)=>x!==i));
+  const updLine=(i,f,v)=>setLines(l=>l.map((ln,x)=>{
+    if(x!==i) return ln;
+    if(f==='productId'){
+      const p=products.find(p=>String(p.id)===v);
+      return{...ln,productId:v,productName:p?.name||'',productCode:p?.code||'',unitPrice:p?.costPrice??p?.salesPrice??0,unit:p?.unitOfMeasureType||'stk'};
+    }
+    return{...ln,[f]:v};
+  }));
+
+  const total=lines.reduce((s,l)=>s+Number(l.qty)*Number(l.unitPrice),0);
+
+  const submit=async()=>{
+    if(!sup) return notify('Velg leverandør','warning');
+    // Check SharePoint approval
+    if(spConfigured){
+      const key=sup.name?.toLowerCase().trim();
+      const orgKey=sup.organizationNumber?.replace(/\s/g,'')?.trim();
+      const sp=spApproved[key]??spApproved[orgKey]??undefined;
+      if(sp===false) return notify(`⚠ ${sup.name} er ikke godkjent i SharePoint-listen. Ordren kan ikke opprettes.`,'error');
+    }
+    if(!lines.length) return notify('Legg til minst én linje','warning');
+    if(lines.some(l=>!l.productName)) return notify('Fyll inn produktnavn på alle linjer','warning');
+    setSub(true);
+    try{
+      const o=await createOrder({
+        supplierId:sup.id,supplierName:sup.name,
+        supplierAddress:[sup.streetAddress,sup.zipCode,sup.city,sup.countryName].filter(Boolean).join('\n'),
+        supplierEmail:sup.emailAddress||'',
+        supplierPhone:sup.phoneNumber||'',
+        supplierOrgNr:sup.organizationNumber||'',
+        lines,...det
+      });
+      onClose(o);
+    }finally{setSub(false);}
+  };
+
+  const steps=['Leverandør','Varelinjer','Detaljer'];
+
+  return <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose(null)}>
+    <div class="mod" style={{width:660}}>
+      <div class="mod-hd">
+        <div><div class="mod-tl">Ny innkjøpsordre</div>
+        <div class="f ic g2" style={{marginTop:6}}>
+          {steps.map((s,i)=><span key={i} style={{display:'flex',alignItems:'center',gap:5}}>
+            <span style={{width:20,height:20,borderRadius:'50%',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:600,background:step===i+1?'var(--br)':step>i+1?'var(--brl)':'var(--sur2)',color:step===i+1?'#fff':step>i+1?'var(--br)':'var(--txt3)'}}>{i+1}</span>
+            <span style={{fontSize:12,color:step===i+1?'var(--br)':'var(--txt3)',fontWeight:step===i+1?600:400}}>{s}</span>
+            {i<2&&<i className="ti ti-chevron-right" style={{fontSize:11,color:'var(--txt3)'}}/>}
+          </span>)}
+        </div></div>
+        <button class="btn bsm bic" onClick={()=>onClose(null)}><i class="ti ti-x"/></button>
+      </div>
+
+      <div class="mod-bd">
+        {step===1&&<>
+          <div class="fg">
+            <label class="fl">Velg leverandør fra PowerOffice Go</label>
+            <select class="fi fsel" value={sup?.id||''} onChange={e=>{const s=suppliers.find(x=>String(x.id)===e.target.value);setSup(s||null);}}>
+              <option value="">— Velg leverandør —</option>
+              {suppliers.map(s=><option key={s.id} value={s.id}>{s.name}{s.supplierNumber?` (nr. ${s.supplierNumber})`:''}</option>)}
+            </select>
+          </div>
+          {sup&&<div class="sup-card">
+            <i class="ti ti-building-store"/>
+            <div>
+              <div class="sup-nm">{sup.name}</div>
+              {sup.supplierNumber&&<div class="sup-row"><i class="ti ti-hash"/>Lev.nr: {sup.supplierNumber}</div>}
+              {sup.organizationNumber&&<div class="sup-row"><i class="ti ti-id-badge"/>Org.nr: {sup.organizationNumber}</div>}
+              {(sup.streetAddress||sup.city)&&<div class="sup-row"><i class="ti ti-map-pin"/>{[sup.streetAddress,sup.zipCode,sup.city].filter(Boolean).join(', ')}</div>}
+              {sup.emailAddress&&<div class="sup-row"><i class="ti ti-mail"/>{sup.emailAddress}</div>}
+              {sup.phoneNumber&&<div class="sup-row"><i class="ti ti-phone"/>{sup.phoneNumber}</div>}
+          {spConfigured&&(()=>{
+            const key=sup.name?.toLowerCase().trim();
+            const sp=spApproved[key]??spApproved[sup.organizationNumber?.trim()]??undefined;
+            if(sp===true)  return <div class="sup-row" style={{color:'var(--brm)',fontWeight:600}}><i class="ti ti-shield-check"/> Godkjent i SharePoint ✓</div>;
+            if(sp===false) return <div class="al warn" style={{marginTop:6,padding:'7px 10px',fontSize:12}}><i class="ti ti-shield-x"/><strong>Ikke godkjent i SharePoint!</strong> Ordren blokkeres.</div>;
+            return <div class="sup-row" style={{color:'var(--txt3)'}}><i class="ti ti-shield"/> Ikke i SharePoint-listen</div>;
+          })()}
+            </div>
+          </div>}
+        </>}
+
+        {step===2&&<>
+          <div class="pol">
+            <div class="polr hd"><span>Produkt</span><span style={{textAlign:'right'}}>Ant.</span><span style={{textAlign:'right'}}>Kostpris (kr)</span><span style={{textAlign:'right'}}>Sum</span><span/></div>
+            {lines.length===0&&<div style={{padding:'20px',textAlign:'center',color:'var(--txt3)',fontSize:13}}>Ingen linjer ennå. Klikk «Legg til linje».</div>}
+            {lines.map((ln,i)=><div class="polr" key={i}>
+              <div>
+                <select class="fi fsel" style={{marginBottom:4,fontSize:12,padding:'6px 8px'}} value={ln.productId} onChange={e=>updLine(i,'productId',e.target.value)}>
+                  <option value="">— Velg fra POGO (eller skriv under) —</option>
+                  {products.map(p=><option key={p.id} value={p.id}>{p.name}{p.code?` [${p.code}]`:''}</option>)}
+                </select>
+                {!ln.productId&&<input class="fi" style={{fontSize:12,padding:'5px 8px'}} placeholder="Skriv varenavn (ikke i POGO)" value={ln.productName} onChange={e=>updLine(i,'productName',e.target.value)}/>}
+              </div>
+              <div><input class="fi" type="number" min="1" step="1" value={ln.qty} style={{textAlign:'right',padding:'6px 8px'}} onChange={e=>updLine(i,'qty',e.target.value)}/></div>
+              <div><input class="fi fmo" type="number" min="0" step="0.01" value={ln.unitPrice} style={{textAlign:'right',padding:'6px 8px'}} onChange={e=>updLine(i,'unitPrice',e.target.value)}/></div>
+              <div style={{fontFamily:'var(--mono)',fontSize:12,textAlign:'right',fontWeight:600,paddingTop:6}}>{kr(ln.qty*ln.unitPrice)}</div>
+              <button class="btn bsm bic bd" onClick={()=>rmLine(i)}><i class="ti ti-trash" style={{fontSize:13}}/></button>
+            </div>)}
+          </div>
+          <div class="f ic g2">
+            <button class="btn bsm bs" onClick={addLine}><i class="ti ti-plus"/> Legg til linje</button>
+            {lines.length>0&&<span class="mla fmo fsb tsm">{kr(total)}</span>}
+          </div>
+        </>}
+
+        {step===3&&<>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            <div class="fg"><label class="fl">Vår referanse</label><input class="fi" value={det.buyerRef} onChange={e=>setDet(d=>({...d,buyerRef:e.target.value}))} placeholder="Navn / avdeling"/></div>
+            <div class="fg"><label class="fl">Ønsket leveringsdato</label><input class="fi" type="date" value={det.deliveryDate} onChange={e=>setDet(d=>({...d,deliveryDate:e.target.value}))}/></div>
+            <div class="fg"><label class="fl">Betalingsbetingelser</label><input class="fi" value={det.paymentTerms} onChange={e=>setDet(d=>({...d,paymentTerms:e.target.value}))}/></div>
+            <div class="fg"><label class="fl">Leveringsadresse</label><input class="fi" value={det.deliveryAddress} onChange={e=>setDet(d=>({...d,deliveryAddress:e.target.value}))}/></div>
+          </div>
+          <div class="fg"><label class="fl">Merknader til leverandør</label><textarea class="fi" rows={3} style={{resize:'vertical'}} value={det.notes} onChange={e=>setDet(d=>({...d,notes:e.target.value}))} placeholder="Spesielle instruksjoner, pakking m.m."/></div>
+          <div style={{background:'var(--sur2)',borderRadius:'var(--rs)',padding:'12px 14px'}}>
+            <div class="fsb" style={{marginBottom:6,fontSize:13}}>Oppsummering</div>
+            <div class="f ic" style={{justifyContent:'space-between',fontSize:13}}><span class="tm">Leverandør:</span><span class="fsb">{sup?.name}</span></div>
+            <div class="f ic" style={{justifyContent:'space-between',fontSize:13,marginTop:3}}><span class="tm">Antall varelinjer:</span><span>{lines.length}</span></div>
+            <div class="f ic" style={{justifyContent:'space-between',fontSize:13,marginTop:3}}><span class="tm">Total eks. MVA:</span><span class="fsb fmo">{kr(total)}</span></div>
+            <div class="f ic" style={{justifyContent:'space-between',fontSize:13,marginTop:3}}><span class="tm">MVA (25%):</span><span class="fmo">{kr(total*0.25)}</span></div>
+            <div class="f ic" style={{justifyContent:'space-between',fontSize:14,marginTop:6,paddingTop:6,borderTop:'1px solid var(--bdr)'}}><span class="fsb">TOTALT inkl. MVA:</span><span class="fsb fmo">{kr(total*1.25)}</span></div>
+          </div>
+        </>}
+      </div>
+
+      <div class="mod-ft">
+        {step>1&&<button class="btn" onClick={()=>setStep(s=>s-1)}><i class="ti ti-arrow-left"/> Tilbake</button>}
+        <span class="mla"/>
+        {step<3&&<button class="btn bp" onClick={()=>setStep(s=>s+1)} disabled={step===1&&!sup}>Neste <i class="ti ti-arrow-right"/></button>}
+        {step===3&&<button class="btn bp" onClick={submit} disabled={sub}>{sub?<><i class="ti ti-loader spin"/> Oppretter…</>:<><i class="ti ti-check"/> Opprett innkjøpsordre</>}</button>}
+      </div>
+    </div>
+  </div>;
+}
+
+/* Order Detail Modal */
+function OrderModal({order,onClose}){
+  const lines=order.lines||[];
+  const total=lines.reduce((s,l)=>s+Number(l.qty)*Number(l.unitPrice),0);
+  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div class="mod" style={{width:660}}>
+      <div class="mod-hd">
+        <div>
+          <div class="f ic g2"><div class="mod-tl">{order.id}</div><StatusBadge status={order.status}/></div>
+          <div class="tsm tm">{order.supplierName} · {fmtDate(order.created)}</div>
+          {order.approvedBy&&<div class="tsm" style={{color:'var(--brm)',marginTop:2}}><i class="ti ti-circle-check"/> Godkjent av {order.approvedBy}{order.approvedAt?' — '+fmtDate(order.approvedAt):''}</div>}
+          {order.receivedAt&&<div class="tsm" style={{color:'var(--brm)',marginTop:1}}><i class="ti ti-package"/> Varer mottatt {fmtDate(order.receivedAt)}</div>}
+        </div>
+        <div class="f ic g2">
+          {['approved','ordered','received'].includes(order.status)
+            ? <button class="btn bsm bi" onClick={()=>printPDF(order)}><i class="ti ti-printer"/> PDF / Utskrift</button>
+            : <span class="bdg bgr tsm" title="Ordren må godkjennes før utskrift"><i class="ti ti-lock"/> PDF låst — ikke godkjent</span>}
+          <button class="btn bsm bic" onClick={onClose}><i class="ti ti-x"/></button>
+        </div>
+      </div>
+      <div class="mod-bd">
+        {!['approved','ordered','received'].includes(order.status)&&order.status!=='rejected'&&<div class="al warn" style={{marginBottom:14}}>
+          <i class="ti ti-lock"/>
+          <div><strong>Ikke godkjent ennå.</strong><div class="tsm" style={{marginTop:2}}>PDF og utsendelse er låst til ordren er godkjent.</div></div>
+        </div>}
+        <div class="sup-card">
+          <i class="ti ti-building-store" style={{fontSize:28}}/>
+          <div>
+            <div class="sup-nm">{order.supplierName}</div>
+            {order.supplierAddress&&<div class="sup-row"><i class="ti ti-map-pin"/>{order.supplierAddress.replace(/\n/g,', ')}</div>}
+            {order.supplierEmail&&<div class="sup-row"><i class="ti ti-mail"/>{order.supplierEmail}</div>}
+            {order.supplierPhone&&<div class="sup-row"><i class="ti ti-phone"/>{order.supplierPhone}</div>}
+            {order.supplierOrgNr&&<div class="sup-row"><i class="ti ti-id-badge"/>Org.nr: {order.supplierOrgNr}</div>}
+          </div>
+        </div>
+        <table class="dt" style={{marginBottom:10}}>
+          <thead><tr><th>Kode</th><th>Produkt</th><th style={{textAlign:'right'}}>Ant.</th><th>Enhet</th><th style={{textAlign:'right'}}>Kostpris</th><th style={{textAlign:'right'}}>Beløp</th></tr></thead>
+          <tbody>{lines.map((l,i)=><tr key={i}>
+            <td class="fmo tsm tm">{l.productCode||'—'}</td>
+            <td class="fw5">{l.productName}</td>
+            <td style={{textAlign:'right'}}>{l.qty}</td>
+            <td class="tsm tm">{l.unit||'stk'}</td>
+            <td style={{textAlign:'right'}} class="fmo tsm">{kr(l.unitPrice)}</td>
+            <td style={{textAlign:'right'}} class="fmo fsb">{kr(l.qty*l.unitPrice)}</td>
+          </tr>)}</tbody>
+        </table>
+        <div class="f" style={{justifyContent:'flex-end',gap:16,borderTop:'1px solid var(--bdr)',padding:'9px 4px',fontSize:13,marginBottom:10}}>
+          <span class="tm">Sum eks. MVA:</span><span class="fsb fmo">{kr(total)}</span>
+          <span class="tm">MVA:</span><span class="fmo">{kr(total*.25)}</span>
+          <span class="fsb">Totalt:</span><span class="fsb fmo">{kr(total*1.25)}</span>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,fontSize:12}}>
+          {order.buyerRef&&<div><span class="tm">Vår ref.:</span> {order.buyerRef}</div>}
+          {order.deliveryDate&&<div><span class="tm">Levering:</span> {fmtDate(order.deliveryDate)}</div>}
+          {order.paymentTerms&&<div><span class="tm">Betalingsbet.:</span> {order.paymentTerms}</div>}
+          {order.deliveryAddress&&<div><span class="tm">Leveringsadresse:</span> {order.deliveryAddress}</div>}
+        </div>
+        {order.notes&&<div class="al info" style={{marginTop:10}}><i class="ti ti-notes"/><span>{order.notes}</span></div>}
+        {order.status==='received'&&order.receivedLines?.length>0&&<div style={{marginTop:12,background:'var(--brl)',borderRadius:'var(--rs)',padding:'10px 14px'}}>
+          <div class="fsb tsm" style={{color:'var(--br)',marginBottom:6}}><i class="ti ti-package"/> Mottatte varer</div>
+          {order.receivedLines.map((l,i)=><div key={i} class="f ic" style={{justifyContent:'space-between',fontSize:12,marginTop:3}}>
+            <span>{l.productName}</span><span class="fmo fsb">+{l.qtyReceived} stk</span>
+          </div>)}
+        </div>}
+        {order.pogoManualSteps?.length>0&&<div class="al warn" style={{marginTop:10,flexDirection:'column',gap:6}}>
+          <div class="f ic g2"><i class="ti ti-alert-triangle"/><strong>Manuell oppdatering i POGO kreves</strong></div>
+          <div class="tsm">Lagertelling i POGO ble ikke oppdatert automatisk (demo-begrensning). Gjør dette i POGO:</div>
+          <ol style={{paddingLeft:16,marginTop:4}}>
+            {order.pogoManualSteps[0]?.steps?.map((s,i)=><li key={i} style={{fontSize:12,marginTop:3}}>{s}</li>)}
+          </ol>
+        </div>}
+      </div>
+    </div>
+  </div>;
+}
+
+/* Pages */
+/* ── Product Detail Modal ──────────────────────────────────────────────────── */
+function ProductDetailModal({product:p, onClose, onOrder}){
+  const {orders, history} = useApp();
+
+  // Find all POs involving this product
+  const relatedOrders = orders.filter(o=>
+    (o.lines||[]).some(l=>l.productName===p.name||l.productCode===p.code||l.productId===p.id)
+  );
+
+  // Find stock movements from history
+  const stockHistory = history.filter(h=>
+    h.type==='stock_update' && h.text.includes(p.name)
+  );
+
+  const stockColor = p.stockOnHand===null?'var(--txt3)':p.stockOnHand<=0?'var(--dn)':p.stockOnHand<=3?'var(--wn)':'var(--brm)';
+
+  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div class="mod" style={{width:620}}>
+      <div class="mod-hd">
+        <div>
+          <div class="mod-tl">{p.name}</div>
+          {p.code&&<div class="tsm tm">Kode: <span class="fmo">{p.code}</span></div>}
+        </div>
+        <div class="f ic g2">
+          <button class="btn bsm bs" onClick={onOrder}><i class="ti ti-plus"/> Ny innkjøpsordre</button>
+          <button class="btn bsm bic" onClick={onClose}><i class="ti ti-x"/></button>
+        </div>
+      </div>
+      <div class="mod-bd">
+
+        {/* Key metrics */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
+          <div class="cmp-card">
+            <div class="cmp-label">Kostpris</div>
+            <div class="cmp-val" style={{fontSize:18}}>{p.costPrice!=null?kr(p.costPrice):'—'}</div>
+          </div>
+          <div class="cmp-card">
+            <div class="cmp-label">Salgspris</div>
+            <div class="cmp-val" style={{fontSize:18}}>{p.salesPrice!=null?kr(p.salesPrice):'—'}</div>
+          </div>
+          <div class="cmp-card">
+            <div class="cmp-label">På lager</div>
+            <div class="cmp-val" style={{fontSize:18,color:stockColor}}>{p.stockOnHand!=null?p.stockOnHand.toLocaleString('nb-NO'):'—'}</div>
+            {p.availableQuantity!=null&&p.availableQuantity!==p.stockOnHand&&<div class="ms">{p.availableQuantity} tilgjengelig</div>}
+          </div>
+        </div>
+
+        {/* Product details */}
+        <div class="card" style={{marginBottom:12}}>
+          <div class="card-hd"><span class="card-title">Produktinformasjon</span></div>
+          <div style={{padding:'12px 14px'}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px 20px',fontSize:13}}>
+              {p.code&&<div><span class="tm">Varekode:</span> <span class="fmo">{p.code}</span></div>}
+              {p.productGroupName&&<div><span class="tm">Produktgruppe:</span> {p.productGroupName}</div>}
+              {p.unitOfMeasureType&&<div><span class="tm">Enhet:</span> {p.unitOfMeasureType}</div>}
+              <div><span class="tm">Lagerstyrt:</span> {p.IsStockItem||p.isStockItem?<span class="bdg bok txs">Ja</span>:<span class="bdg bgr txs">Nei</span>}</div>
+              {p.costPrice!=null&&p.salesPrice!=null&&p.costPrice>0&&<div><span class="tm">Bruttomargin:</span> <span style={{color:'var(--brm)',fontWeight:600}}>{((p.salesPrice-p.costPrice)/p.salesPrice*100).toFixed(1)}%</span></div>}
+              {p.costPrice!=null&&p.salesPrice!=null&&<div><span class="tm">Dekningsbidrag:</span> <span class="fmo">{kr(p.salesPrice-p.costPrice)}</span></div>}
+            </div>
+            {p.description&&<div style={{marginTop:10,paddingTop:10,borderTop:'1px solid var(--bdr)',fontSize:13,color:'var(--txt2)'}}>{p.description}</div>}
+          </div>
+        </div>
+
+        {/* Stock bar visual */}
+        {p.stockOnHand!=null&&<div style={{padding:'12px 14px',background:'var(--sur2)',borderRadius:'var(--rs)',marginBottom:12}}>
+          <div class="f ic" style={{justifyContent:'space-between',marginBottom:6}}>
+            <span class="tsm fw5">Lagerbeholdning</span>
+            <span class="fmo tsm" style={{color:stockColor}}>{p.stockOnHand} stk</span>
+          </div>
+          <div class="sb-trk" style={{height:8,borderRadius:4}}>
+            <div class="sb-fil" style={{
+              width:`${Math.min(100,(p.stockOnHand/(Math.max(p.stockOnHand,20)))*100)}%`,
+              background:stockColor,height:'100%',borderRadius:4
+            }}/>
+          </div>
+          {p.stockOnHand<=3&&p.stockOnHand>0&&<div class="al warn" style={{marginTop:8,marginBottom:0,padding:'7px 10px',fontSize:12}}><i class="ti ti-alert-triangle"/>Lavt lager — vurder å opprette innkjøpsordre</div>}
+          {p.stockOnHand<=0&&<div class="al" style={{marginTop:8,marginBottom:0,padding:'7px 10px',fontSize:12,background:'var(--dnl)',color:'var(--dn)',border:'1px solid rgba(185,28,28,.2)'}}><i class="ti ti-alert-circle"/>Utsolgt!</div>}
+        </div>}
+
+        {/* Related purchase orders */}
+        {relatedOrders.length>0&&<div class="card" style={{marginBottom:12}}>
+          <div class="card-hd"><span class="card-title">Innkjøpsordrer med denne varen</span></div>
+          <table class="dt">
+            <thead><tr><th>Ordrenr.</th><th>Leverandør</th><th style={{textAlign:'right'}}>Ant.</th><th>Dato</th><th>Status</th></tr></thead>
+            <tbody>{relatedOrders.map(o=>{
+              const line=(o.lines||[]).find(l=>l.productName===p.name||l.productCode===p.code||l.productId===p.id);
+              return <tr key={o.id}>
+                <td class="fmo fsb">{o.id}</td>
+                <td class="fw5">{o.supplierName}</td>
+                <td style={{textAlign:'right'}} class="fmo">{line?.qty||'—'}</td>
+                <td class="tsm tm">{fmtDate(o.created)}</td>
+                <td><StatusBadge status={o.status}/></td>
+              </tr>;
+            })}</tbody>
+          </table>
+        </div>}
+
+        {/* Stock history from activity log */}
+        {stockHistory.length>0&&<div class="card">
+          <div class="card-hd"><span class="card-title">Lagerhistorikk</span></div>
+          {stockHistory.slice(0,8).map(h=><div class="hi" key={h.id}>
+            <div class="hd" style={{background:dotColors[h.type]||'var(--txt3)'}}/>
+            <div><div style={{fontSize:13}}>{h.text}</div><div style={{fontSize:11,color:'var(--txt3)',marginTop:2,fontFamily:'var(--mono)'}}>{fmtTs(h.ts)} · {h.user}</div></div>
+          </div>)}
+        </div>}
+
+        {/* Debug: all POGO fields */}
+        <details style={{marginTop:8}}><summary style={{fontSize:11,color:'var(--txt3)',cursor:'pointer'}}>Vis alle POGO-felter</summary>
+          <pre style={{fontSize:10,background:'var(--sur2)',padding:10,borderRadius:'var(--rs)',overflow:'auto',maxHeight:200,marginTop:6}}>{JSON.stringify(p,null,2)}</pre>
+        </details>
+      </div>
+    </div>
+  </div>;
+}
+
+function Products(){
+  const {products,loading,fetchProducts,orders,syncStock}=useApp();
+  const [search,setSearch]=useState('');
+  const [newOrderOpen,setNewOrderOpen]=useState(false);
+  const [doneOrder,setDoneOrder]=useState(null);
+  const [selectedProduct,setSelectedProduct]=useState(null);
+  const filtered=products.filter(p=>!search||p.name?.toLowerCase().includes(search.toLowerCase())||String(p.code||'').toLowerCase().includes(search.toLowerCase())||String(p.productNo||'').toLowerCase().includes(search.toLowerCase()));
+  const totalStock=products.reduce((s,p)=>s+(p.stockOnHand??p.quantityOnHand??0),0);
+  const totalVal=products.reduce((s,p)=>s+((p.costPrice??p.purchasePrice??0)*(p.stockOnHand??p.quantityOnHand??0)),0);
+  return <>
+    <div class="ph"><span class="ph-title">Produkter fra PowerOffice Go</span>
+      <div class="ph-acts">
+        <button class="btn bsm" onClick={fetchProducts} disabled={loading.products}><i class={`ti ${loading.products?'ti-loader spin':'ti-refresh'}`}/>{loading.products?'Henter…':'Oppdater'}</button>
+        <button class="btn bp" onClick={()=>setNewOrderOpen(true)}><i class="ti ti-plus"/> Ny innkjøpsordre</button>
+      </div>
+    </div>
+    <div class="pb">
+      <div class="mg">
+        <div class="mc"><div class="ml">Produkter i POGO</div><div class="mv">{products.length}</div><div class="ms ok">Fra PowerOffice Go</div></div>
+        <div class="mc"><div class="ml">Total lagerbeholdning</div><div class="mv">{totalStock.toLocaleString('nb-NO')}</div><div class="ms">Enheter</div></div>
+        <div class="mc"><div class="ml">Lagerverdi (kost)</div><div class="mv" style={{fontSize:16}}>{kr(totalVal)}</div><div class="ms ok">Eks. MVA</div></div>
+        <div class="mc"><div class="ml">Innkjøpsordrer</div><div class="mv">{orders.length}</div></div>
+      </div>
+      {products.length===0&&!loading.products&&<div class="al info"><i class="ti ti-info-circle"/><span>Ingen produkter hentet ennå. Sjekk at server kjører og at det finnes produkter i POGO-demomiljøet. Klikk <strong>Oppdater</strong>.</span></div>}
+      <div class="shd"><span class="stt">Alle produkter ({filtered.length})</span><input class="fi" style={{width:220}} placeholder="Søk navn, kode…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      <div class="card">
+        {loading.products?<div class="empty"><i class="ti ti-loader spin"/><p>Henter produkter fra PowerOffice Go…</p></div>
+        :filtered.length===0?<div class="empty"><i class="ti ti-package-off"/><p>Ingen produkter funnet</p></div>
+        :<table class="dt">
+          <thead><tr><th>Kode</th><th>Produktnavn</th><th>Gruppe</th><th style={{textAlign:'right'}}>Kostpris</th><th style={{textAlign:'right'}}>Salgspris</th><th style={{textAlign:'right'}}>Lager</th><th style={{textAlign:'right'}}>Tilgjengelig</th><th>Enhet</th></tr></thead>
+          <tbody>{filtered.map(p=>{
+            const stock=p.stockOnHand??null;
+            const avail=p.availableQuantity??stock;
+            const cost=p.costPrice??null;
+            const sales=p.salesPrice??null;
+            return <tr key={p.id} style={{cursor:'pointer'}} onClick={()=>setSelectedProduct(p)}>
+              <td><span class="fmo tsm tm">{p.code||'—'}</span></td>
+              <td><div class="fw5">{p.name}</div>{p.description&&<div class="txs tm">{p.description.slice(0,55)}{p.description.length>55?'…':''}</div>}</td>
+              <td class="tsm tm">{p.productGroupName||'—'}</td>
+              <td style={{textAlign:'right'}} class="fmo tsm">{cost!==null?kr(cost):'—'}</td>
+              <td style={{textAlign:'right'}} class="fmo tsm tm">{sales!==null?kr(sales):'—'}</td>
+              <td style={{textAlign:'right'}}>{stock!==null?stock.toLocaleString('nb-NO'):<span class="tm">—</span>}</td>
+              <td style={{textAlign:'right'}} class="tm tsm">{avail!==null?avail.toLocaleString('nb-NO'):'—'}</td>
+              <td class="tsm tm">{p.unitOfMeasureType||'stk'}</td>
+            </tr>;
+          })}</tbody>
+        </table>}
+      </div>
+    </div>
+    {newOrderOpen&&<NewOrderModal onClose={o=>{setNewOrderOpen(false);if(o)setDoneOrder(o);}}/>}
+    {doneOrder&&<OrderModal order={doneOrder} onClose={()=>setDoneOrder(null)}/>}
+    {selectedProduct&&<ProductDetailModal product={selectedProduct} onClose={()=>setSelectedProduct(null)} onOrder={()=>{setSelectedProduct(null);setNewOrderOpen(true);}}/> }
+  </>;
+}
+
+function Suppliers(){
+  const {suppliers,loading,fetchSuppliers,spApproved,spData,spConfigured,spLoading,syncSharePoint}=useApp();
+  const [search,setSearch]=useState('');
+  const [detail,setDetail]=useState(null);
+  const filtered=suppliers.filter(s=>!search||s.name?.toLowerCase().includes(search.toLowerCase())||String(s.supplierNumber||'').includes(search)||(s.organizationNumber||'').includes(search));
+  return <>
+    <div class="ph"><span class="ph-title">Leverandører fra PowerOffice Go</span>
+      <div class="ph-acts">
+        <button class="btn bsm" onClick={fetchSuppliers} disabled={loading.suppliers}>
+          <i class={`ti ${loading.suppliers?'ti-loader spin':'ti-refresh'}`}/>{loading.suppliers?'Henter…':'Oppdater POGO'}
+        </button>
+        <button class={`btn bsm ${spConfigured?'bs':'bw'}`} onClick={syncSharePoint} disabled={spLoading}
+          title={spConfigured?'Hent godkjenningsstatus fra SharePoint':'SharePoint ikke konfigurert — gå til Innstillinger'}>
+          <i class={`ti ${spLoading?'ti-loader spin':spConfigured?'ti-shield-check':'ti-shield-off'}`}/>
+          {spLoading?'Sjekker…':spConfigured?'Oppdater SP':'Koble SharePoint'}
+        </button>
+      </div>
+    </div>
+    <div class="pb">
+      <div class="mg">
+        <div class="mc"><div class="ml">Leverandører i POGO</div><div class="mv">{suppliers.length}</div><div class="ms ok">Fra PowerOffice Go</div></div>
+        <div class="mc"><div class="ml">Aktive</div><div class="mv">{suppliers.filter(s=>!s.isInactive).length}</div></div>
+        <div class="mc"><div class="ml">Med e-post</div><div class="mv">{suppliers.filter(s=>s.emailAddress||s.email).length}</div></div>
+        <div class="mc"><div class="ml">Med org.nr</div><div class="mv">{suppliers.filter(s=>s.organizationNumber).length}</div></div>
+      </div>
+      {suppliers.length===0&&!loading.suppliers&&<div class="al info"><i class="ti ti-info-circle"/><span>Ingen leverandører hentet. Sjekk servertilkobling og klikk <strong>Oppdater</strong>.</span></div>}
+      <div class="shd"><span class="stt">Alle leverandører ({filtered.length})</span><input class="fi" style={{width:220}} placeholder="Søk navn, nr, org.nr…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      <div class="card">
+        {loading.suppliers?<div class="empty"><i class="ti ti-loader spin"/><p>Henter leverandører…</p></div>
+        :filtered.length===0?<div class="empty"><i class="ti ti-building-off"/><p>Ingen leverandører funnet</p></div>
+        :<table class="dt">
+          <thead><tr><th>Lev.nr</th><th>Navn</th><th>Org.nr</th><th>E-post</th><th>Telefon</th><th>Adresse</th><th>POGO-status</th>{spConfigured&&<th>SharePoint</th>}</tr></thead>
+          <tbody>{filtered.map(s=><tr key={s.id} style={{cursor:'pointer'}} onClick={()=>setDetail(s)}>
+            <td class="fmo tsm">{s.supplierNumber||'—'}</td>
+            <td class="fw5">{s.name}</td>
+            <td class="fmo tsm tm">{s.organizationNumber||'—'}</td>
+            <td class="tsm">{s.emailAddress||'—'}</td>
+            <td class="tsm tm">{s.phoneNumber||'—'}</td>
+            <td class="tsm tm">{[s.streetAddress,s.city].filter(Boolean).join(', ')||'—'}</td>
+            <td>
+                {s.isInactive?<span class="bdg bgr">Inaktiv</span>:<span class="bdg bok">Aktiv</span>}
+              </td>
+              <td>{(()=>{
+                const key=s.name?.toLowerCase().trim();
+                const orgKey=s.organizationNumber?.trim();
+                const sp=spApproved[key]??spApproved[orgKey]??undefined;
+                if(!spConfigured) return null;
+                if(sp===true)  return <span class="bdg bok"><i class="ti ti-shield-check"/> SP godkjent</span>;
+                if(sp===false) return <span class="bdg bdn"><i class="ti ti-shield-x"/> Ikke godkjent</span>;
+                return <span class="bdg bgr"><i class="ti ti-shield"/> Ikke i SP-liste</span>;
+              })()}</td>
+          </tr>)}</tbody>
+        </table>}
+      </div>
+    </div>
+    {detail&&<div class="mo" onClick={e=>e.target===e.currentTarget&&setDetail(null)}>
+      <div class="mod">
+        <div class="mod-hd"><span class="mod-tl">{detail.name}</span><button class="btn bsm bic" onClick={()=>setDetail(null)}><i class="ti ti-x"/></button></div>
+        <div class="mod-bd">
+          <div class="sup-card">
+            <i class="ti ti-building-store" style={{fontSize:30}}/>
+            <div>
+              <div class="sup-nm">{detail.name}</div>
+              {detail.supplierNumber&&<div class="sup-row"><i class="ti ti-hash"/>Lev.nr: {detail.supplierNumber}</div>}
+              {detail.organizationNumber&&<div class="sup-row"><i class="ti ti-id-badge"/>Org.nr: {detail.organizationNumber}</div>}
+              {(detail.streetAddress||detail.city)&&<div class="sup-row"><i class="ti ti-map-pin"/>{[detail.streetAddress,detail.zipCode,detail.city,detail.countryName].filter(Boolean).join(', ')}</div>}
+              {detail.emailAddress&&<div class="sup-row"><i class="ti ti-mail"/>{detail.emailAddress}</div>}
+              {detail.phoneNumber&&<div class="sup-row"><i class="ti ti-phone"/>{detail.phoneNumber}</div>}
+              {detail.paymentTermName&&<div class="sup-row"><i class="ti ti-calendar-due"/>Bet.bet.: {detail.paymentTermName}</div>}
+              {detail.currencyCode&&<div class="sup-row"><i class="ti ti-currency"/>Valuta: {detail.currencyCode}</div>}
+              {detail.bankAccountNumber&&<div class="sup-row"><i class="ti ti-building-bank"/>Konto: {detail.bankAccountNumber}</div>}
+            </div>
+          </div>
+          {/* SharePoint godkjenningsinfo */}
+          {spConfigured&&(()=>{
+            const key=detail.name?.toLowerCase().trim();
+            const orgKey=String(detail.organizationNumber||'').replace(/\s/g,'').trim();
+            const approved=spApproved[key]??spApproved[orgKey]??undefined;
+            const spRec=spData[key]||spData[orgKey]||null;
+            return <div style={{marginTop:10,padding:'12px 14px',borderRadius:'var(--rs)',
+              background:approved===true?'var(--brl)':approved===false?'var(--dnl)':'var(--sur2)',
+              border:`1px solid ${approved===true?'rgba(27,94,59,.2)':approved===false?'rgba(185,28,28,.2)':'var(--bdr)'}`}}>
+              <div class="f ic g2" style={{marginBottom:spRec?6:0}}>
+                <i class={`ti ${approved===true?'ti-shield-check':approved===false?'ti-shield-x':'ti-shield'}`}
+                   style={{color:approved===true?'var(--br)':approved===false?'var(--dn)':'var(--txt3)',fontSize:16}}/>
+                <span class="fsb tsm">
+                  {approved===true?'Godkjent leverandør (SharePoint «Leverandører»)':approved===false?'IKKE godkjent i SharePoint!':'Ikke funnet i SharePoint-listen'}
+                </span>
+                {spRec?.status&&<span class="bdg bgr tsm" style={{marginLeft:4}}>{spRec.status}</span>}
+              </div>
+              {spRec&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 16px',fontSize:12,color:'var(--txt2)'}}>
+                {spRec.riskLevel&&<div><span class="tm">Risikonivå:</span> {spRec.riskLevel}</div>}
+                {spRec.criticality&&<div><span class="tm">Kritikalitet:</span> {spRec.criticality}</div>}
+                {spRec.department&&<div><span class="tm">Avdeling:</span> {spRec.department}</div>}
+              </div>}
+            </div>;
+          })()}
+          <details style={{marginTop:8}}><summary style={{fontSize:11,color:'var(--txt3)',cursor:'pointer',marginBottom:6}}>Vis alle POGO-felter (debug)</summary>
+            <pre style={{fontSize:10,background:'var(--sur2)',padding:10,borderRadius:'var(--rs)',overflow:'auto',maxHeight:200}}>{JSON.stringify(detail,null,2)}</pre>
+          </details>
+        </div>
+      </div>
+    </div>}
+  </>;
+}
+
+/* ── Status badge helper ─────────────────────────────────────────────────── */
+const STATUS_META = {
+  draft:            {label:'Utkast',        cls:'bgr', icon:'ti-pencil'},
+  pending_approval: {label:'Til godkjenning',cls:'bwn', icon:'ti-clock'},
+  approved:         {label:'Godkjent',      cls:'bok', icon:'ti-circle-check'},
+  rejected:         {label:'Avvist',        cls:'bdn', icon:'ti-x'},
+  ordered:          {label:'Bestilt',       cls:'bin', icon:'ti-send'},
+  received:         {label:'Mottatt',       cls:'bok', icon:'ti-package'},
+};
+const StatusBadge = ({status}) => {
+  const m=STATUS_META[status]||{label:status,cls:'bgr',icon:'ti-help'};
+  return <span class={`bdg ${m.cls}`}><i class={`ti ${m.icon}`}/> {m.label}</span>;
+};
+
+/* ── Receive Goods Modal ──────────────────────────────────────────────────── */
+function ReceiveModal({order, onClose}){
+  const {receiveOrder, products} = useApp();
+  const [lines, setLines] = useState(
+    (order.lines||[]).map(l=>{
+      const prod = products.find(p=>p.name===l.productName||p.code===l.productCode);
+      return {...l, productId:prod?.id||null, qtyReceived:l.qty, fullyReceived:true};
+    })
+  );
+  const [submitting, setSubmitting] = useState(false);
+
+  const updateLine=(i,field,val)=>setLines(prev=>prev.map((ln,x)=>x!==i?ln:{...ln,[field]:val}));
+
+  const handleReceive=async()=>{
+    setSubmitting(true);
+    try{
+      const toReceive=lines.filter(l=>l.qtyReceived>0).map(l=>({
+        productId:l.productId,
+        productName:l.productName,
+        qtyReceived:Number(l.qtyReceived),
+      }));
+      await receiveOrder(order.id, toReceive);
+      onClose(true);
+    }finally{setSubmitting(false);}
+  };
+
+  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose(false)}>
+    <div class="mod" style={{width:620}}>
+      <div class="mod-hd">
+        <div><div class="mod-tl">Registrer varemottak</div><div class="tsm tm">{order.id} — {order.supplierName}</div></div>
+        <button class="btn bsm bic" onClick={()=>onClose(false)}><i class="ti ti-x"/></button>
+      </div>
+      <div class="mod-bd">
+        <div class="al info" style={{marginBottom:14}}><i class="ti ti-info-circle"/>
+          <div>
+            <strong>Oppgi faktisk mottatt antall per varelinje.</strong>
+            <div class="tsm" style={{marginTop:3}}>
+              Lager oppdateres umiddelbart i appen. For synkronisering mot PowerOffice Go:
+              produksjonsmiljøet krever rettigheten <em>ManualJournalEntry</em> (kontakt go-api@poweroffice.no).
+              I demo-miljøet oppdateres lagertelling manuelt i POGO under <strong>Lager → Lagertelling</strong>.
+            </div>
+          </div>
+        </div>
+        <div class="pol">
+          <div class="polr hd">
+            <span>Produkt</span>
+            <span style={{textAlign:'right'}}>Bestilt</span>
+            <span style={{textAlign:'right'}}>Mottatt</span>
+            <span style={{textAlign:'center'}}>POGO-ID</span>
+            <span/>
+          </div>
+          {lines.map((ln,i)=><div class="polr" key={i} style={{gridTemplateColumns:'1fr 60px 80px 90px auto',alignItems:'center'}}>
+            <div>
+              <div class="fw5" style={{fontSize:13}}>{ln.productName}</div>
+              {ln.productCode&&<div class="txs tm">[{ln.productCode}]</div>}
+            </div>
+            <div style={{textAlign:'right',fontSize:13,color:'var(--txt2)'}}>{ln.qty}</div>
+            <div>
+              <input class="fi" type="number" min="0" max={ln.qty} value={ln.qtyReceived}
+                style={{textAlign:'right',padding:'5px 7px',fontSize:13}}
+                onChange={e=>updateLine(i,'qtyReceived',e.target.value)}/>
+            </div>
+            <div>
+              {ln.productId
+                ? <span class="bdg bok txs" style={{fontSize:10}}>ID {ln.productId}</span>
+                : <select class="fi fsel" style={{padding:'4px 6px',fontSize:11}}
+                    value={ln.productId||''} onChange={e=>updateLine(i,'productId',e.target.value||null)}>
+                    <option value="">— Koble produkt —</option>
+                    {useApp().products.map(p=><option key={p.id} value={p.id}>{p.name}{p.code?` [${p.code}]`:''}</option>)}
+                  </select>}
+            </div>
+            <div>
+              {ln.qtyReceived>=ln.qty
+                ? <span class="bdg bok txs"><i class="ti ti-check"/> Full</span>
+                : ln.qtyReceived>0
+                ? <span class="bdg bwn txs"><i class="ti ti-alert-triangle"/> Delvis</span>
+                : <span class="bdg bgr txs">0</span>}
+            </div>
+          </div>)}
+        </div>
+      </div>
+      <div class="mod-ft">
+        <button class="btn" onClick={()=>onClose(false)}>Avbryt</button>
+        <button class="btn bp" onClick={handleReceive} disabled={submitting||lines.every(l=>!l.qtyReceived||l.qtyReceived<=0)}>
+          {submitting?<><i class="ti ti-loader spin"/> Registrerer…</>:<><i class="ti ti-package"/> Registrer mottak & oppdater POGO</>}
+        </button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Approve/Reject Modal ─────────────────────────────────────────────────── */
+function ApprovalModal({order, onClose}){
+  const {approveOrder, rejectOrder} = useApp();
+  const [approver, setApprover] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [mode, setMode] = useState('approve'); // 'approve' | 'reject'
+  const val=(order.lines||[]).reduce((s,l)=>s+Number(l.qty)*Number(l.unitPrice),0);
+
+  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div class="mod" style={{width:480}}>
+      <div class="mod-hd">
+        <div><div class="mod-tl">{mode==='approve'?'Godkjenn innkjøpsordre':'Avvis innkjøpsordre'}</div>
+        <div class="tsm tm">{order.id} — {order.supplierName}</div></div>
+        <button class="btn bsm bic" onClick={onClose}><i class="ti ti-x"/></button>
+      </div>
+      <div class="mod-bd">
+        <div class="sup-card" style={{marginBottom:14}}>
+          <i class="ti ti-file-invoice" style={{fontSize:24}}/>
+          <div>
+            <div class="sup-nm">{order.id}</div>
+            <div class="sup-row"><i class="ti ti-building-store"/>{order.supplierName}</div>
+            <div class="sup-row"><i class="ti ti-list-numbers"/>{(order.lines||[]).length} varelinje{(order.lines||[]).length!==1?'r':''}</div>
+            <div class="sup-row"><i class="ti ti-cash"/>{kr(val)} eks. MVA ({kr(val*1.25)} inkl.)</div>
+            {order.buyerRef&&<div class="sup-row"><i class="ti ti-user"/>Ref: {order.buyerRef}</div>}
+          </div>
+        </div>
+        <div class="f g2" style={{marginBottom:14}}>
+          <button class={`btn ${mode==='approve'?'bp':''}`} style={{flex:1}} onClick={()=>setMode('approve')}>
+            <i class="ti ti-circle-check"/> Godkjenn
+          </button>
+          <button class={`btn ${mode==='reject'?'bd':''}`} style={{flex:1}} onClick={()=>setMode('reject')}>
+            <i class="ti ti-x"/> Avvis
+          </button>
+        </div>
+        {mode==='approve'&&<div class="fg">
+          <label class="fl">Godkjent av</label>
+          <input class="fi" value={approver} onChange={e=>setApprover(e.target.value)} placeholder="Ditt navn"/>
+        </div>}
+        {mode==='reject'&&<div class="fg">
+          <label class="fl">Årsak til avvisning</label>
+          <textarea class="fi" rows={3} value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="Begrunn avvisningen…" style={{resize:'vertical'}}/>
+        </div>}
+      </div>
+      <div class="mod-ft">
+        <button class="btn" onClick={onClose}>Avbryt</button>
+        {mode==='approve'
+          ? <button class="btn bp" disabled={!approver} onClick={()=>{approveOrder(order.id,approver);onClose();}}>
+              <i class="ti ti-circle-check"/> Godkjenn ordre
+            </button>
+          : <button class="btn bd" onClick={()=>{rejectOrder(order.id,rejectReason);onClose();}}>
+              <i class="ti ti-x"/> Avvis ordre
+            </button>}
+      </div>
+    </div>
+  </div>;
+}
+
+function Orders(){
+  const {orders, submitForApproval, sendOrder, syncStock, loading} = useApp();
+  const [detail, setDetail] = useState(null);
+  const [newOpen, setNewOpen] = useState(false);
+  const [doneOrder, setDoneOrder] = useState(null);
+  const [approvalModal, setApprovalModal] = useState(null);
+  const [receiveModal, setReceiveModal] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  const filtered = filterStatus==='all' ? orders : orders.filter(o=>o.status===filterStatus);
+  const totalVal = orders.reduce((s,o)=>(o.lines||[]).reduce((ss,l)=>ss+Number(l.qty)*Number(l.unitPrice),s),0);
+
+  const pending = orders.filter(o=>o.status==='pending_approval').length;
+  const approved = orders.filter(o=>o.status==='approved').length;
+  const received = orders.filter(o=>o.status==='received').length;
+
+  // Next action button per status
+  const ActionBtn = ({order}) => {
+    switch(order.status){
+      case 'draft':
+        return <button class="btn bsm bw" onClick={e=>{e.stopPropagation();submitForApproval(order.id);}}>
+          <i class="ti ti-send"/> Send til godkjenning
+        </button>;
+      case 'pending_approval':
+        return <button class="btn bsm" style={{background:'var(--warnl)',color:'var(--wn)',borderColor:'rgba(180,83,9,.2)'}}
+          onClick={e=>{e.stopPropagation();setApprovalModal(order);}}>
+          <i class="ti ti-gavel"/> Behandle
+        </button>;
+      case 'approved':
+        return <button class="btn bsm bp" onClick={e=>{e.stopPropagation();sendOrder(order.id);}}>
+          <i class="ti ti-send"/> Merk som bestilt
+        </button>;
+      case 'ordered':
+        return <button class="btn bsm bs" onClick={e=>{e.stopPropagation();setReceiveModal(order);}}>
+          <i class="ti ti-package"/> Registrer mottak
+        </button>;
+      case 'received':
+        return <span class="bdg bok tsm"><i class="ti ti-check"/> Fullført</span>;
+      case 'rejected':
+        return <span class="bdg bdn tsm"><i class="ti ti-x"/> Avvist</span>;
+      default: return null;
+    }
+  };
+
+  return <>
+    <div class="ph"><span class="ph-title">Innkjøpsordrer</span>
+      <div class="ph-acts">
+        <button class="btn bsm" onClick={syncStock} disabled={loading?.syncStock} title="Synkroniser lagerstatus fra POGO">
+          <i class={`ti ${loading?.syncStock?'ti-loader spin':'ti-refresh'}`}/> Synk lager
+        </button>
+        <button class="btn bp" onClick={()=>setNewOpen(true)}><i class="ti ti-plus"/> Ny innkjøpsordre</button>
+      </div>
+    </div>
+    <div class="pb">
+      <div class="mg">
+        <div class="mc"><div class="ml">Totalt</div><div class="mv">{orders.length}</div><div class="ms">Alle ordrer</div></div>
+        <div class="mc"><div class="ml">Til godkjenning</div><div class="mv" style={{color:pending>0?'var(--wn)':undefined}}>{pending}</div><div class={`ms ${pending>0?'warn':''}`}>{pending>0?'Krever handling':'Ingen ventende'}</div></div>
+        <div class="mc"><div class="ml">Klar til bestilling</div><div class="mv" style={{color:approved>0?'var(--in)':undefined}}>{approved}</div><div class="ms">Godkjente ordrer</div></div>
+        <div class="mc"><div class="ml">Mottatt</div><div class="mv" style={{color:received>0?'var(--brm)':undefined}}>{received}</div><div class="ms ok">Fullførte ordrer</div></div>
+      </div>
+
+      {pending>0&&<div class="al warn"><i class="ti ti-clock"/>
+        <span><strong>{pending} ordre{pending!==1?'r':''} venter på godkjenning.</strong> Klikk «Behandle» for å godkjenne eller avvise.</span>
+      </div>}
+
+      {/* Filter tabs */}
+      <div class="f ic g2" style={{marginBottom:12,flexWrap:'wrap'}}>
+        {['all','draft','pending_approval','approved','ordered','received','rejected'].map(s=>{
+          const meta=STATUS_META[s]||{label:'Alle'};
+          const count=s==='all'?orders.length:orders.filter(o=>o.status===s).length;
+          return <button key={s} class={`pp-btn ${filterStatus===s?'act':''}`} onClick={()=>setFilterStatus(s)}>
+            {s==='all'?'Alle':meta.label} ({count})
+          </button>;
+        })}
+      </div>
+
+      {filtered.length===0
+        ? <div class="card"><div class="empty"><i class="ti ti-file-invoice"/><p>{orders.length===0?'Ingen innkjøpsordrer ennå. Opprett din første ordre ovenfor.':'Ingen ordrer med denne statusen.'}</p></div></div>
+        : <div class="card"><table class="dt">
+          <thead><tr><th>Ordrenr.</th><th>Leverandør</th><th style={{textAlign:'right'}}>Eks. MVA</th><th>Opprettet</th><th>Status</th><th>Handling</th><th></th></tr></thead>
+          <tbody>{filtered.map(o=>{
+            const val=(o.lines||[]).reduce((s,l)=>s+Number(l.qty)*Number(l.unitPrice),0);
+            return <tr key={o.id} style={{cursor:'pointer'}} onClick={()=>setDetail(o)}>
+              <td class="fmo fsb">{o.id}</td>
+              <td><div class="fw5">{o.supplierName}</div><div class="txs tm">{(o.lines||[]).length} linjer</div></td>
+              <td style={{textAlign:'right'}}><div class="fmo fsb">{kr(val)}</div><div class="txs tm">{kr(val*1.25)} inkl.</div></td>
+              <td class="tsm tm">{fmtDate(o.created)}</td>
+              <td onClick={e=>e.stopPropagation()}><StatusBadge status={o.status}/></td>
+              <td onClick={e=>e.stopPropagation()}><ActionBtn order={o}/></td>
+              <td onClick={e=>e.stopPropagation()}>
+                <div class="f g2">
+                  <button class="btn bsm bic" title="Vis detaljer" onClick={()=>setDetail(o)}><i class="ti ti-eye"/></button>
+                  <button class="btn bsm bic bi" title={['approved','ordered','received'].includes(o.status)?'Skriv ut / PDF':'Godkjenn ordre først for å skrive ut'}
+                    disabled={!['approved','ordered','received'].includes(o.status)}
+                    onClick={()=>printPDF(o)}><i class="ti ti-printer"/></button>
+                </div>
+              </td>
+            </tr>;
+          })}</tbody>
+        </table></div>}
+    </div>
+    {newOpen&&<NewOrderModal onClose={o=>{setNewOpen(false);if(o)setDoneOrder(o);}}/>}
+    {doneOrder&&<OrderModal order={doneOrder} onClose={()=>setDoneOrder(null)}/>}
+    {detail&&!doneOrder&&<OrderModal order={detail} onClose={()=>setDetail(null)}/>}
+    {approvalModal&&<ApprovalModal order={approvalModal} onClose={()=>setApprovalModal(null)}/>}
+    {receiveModal&&<ReceiveModal order={receiveModal} onClose={(done)=>{setReceiveModal(null);if(done)setDetail(null);}}/>}
+  </>;
+}
+
+function History(){
+  const {history, orders, products}=useApp();
+  const [filter, setFilter]=useState('all');
+
+  // Derive stock movements: combine history + received orders
+  const stockMovements = [];
+
+  // From received orders — varer INN
+  orders.filter(o=>o.status==='received'&&o.receivedLines?.length>0).forEach(o=>{
+    (o.receivedLines||[]).forEach(l=>{
+      if(l.qtyReceived>0) stockMovements.push({
+        id:`rcv-${o.id}-${l.productName}`,
+        type:'stock_in',
+        text:`+${l.qtyReceived} ${l.productName} (Mottak: ${o.id} fra ${o.supplierName})`,
+        user:'Innkjøp',
+        ts:o.receivedAt||o.created,
+        qty:l.qtyReceived,
+        direction:'in',
+      });
+    });
+  });
+
+  const FILTER_TABS=[
+    {id:'all',label:'Alle'},
+    {id:'stock',label:'Lagerbevegelser'},
+    {id:'orders',label:'Innkjøp'},
+    {id:'sync',label:'Synk'},
+  ];
+
+  const typeToFilter={
+    stock_update:'stock', stock_in:'stock', low_stock:'stock',
+    po_created:'orders', po_submitted:'orders', approved:'orders', denied:'orders',
+    sync:'sync',
+  };
+
+  const combined=[...history, ...stockMovements].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  const filtered = filter==='all' ? combined : combined.filter(h=>typeToFilter[h.type]===filter);
+
+  const directionIcon={stock_in:'ti-arrow-down-circle',stock_update:'ti-refresh',low_stock:'ti-alert-triangle',po_created:'ti-file-plus',po_submitted:'ti-send',approved:'ti-circle-check',denied:'ti-x',sync:'ti-refresh'};
+  const directionColor={stock_in:'#3B6D11',stock_update:'#1D4ED8',low_stock:'#B45309',po_created:'#3B6D11',po_submitted:'#1D4ED8',approved:'#3B6D11',denied:'#B91C1C',sync:'#9A9A92'};
+
+  return <>
+    <div class="ph"><span class="ph-title">Aktivitetslogg</span>
+      <div class="ph-acts"><span class="tsm tm">{combined.length} hendelser</span></div>
+    </div>
+    <div class="pb">
+      <div class="f ic g2" style={{marginBottom:12,flexWrap:'wrap'}}>
+        {FILTER_TABS.map(t=><button key={t.id} class={`pp-btn ${filter===t.id?'act':''}`} onClick={()=>setFilter(t.id)}>{t.label}</button>)}
+      </div>
+      <div class="card">
+        {filtered.length===0?<div class="empty"><i class="ti ti-history"/><p>Ingen aktivitet i denne kategorien</p></div>
+        :filtered.map(h=><div class="hi" key={h.id}>
+          <div class="hd" style={{background:directionColor[h.type]||'var(--txt3)'}}/>
+          <div style={{flex:1}}>
+            <div class="f ic" style={{justifyContent:'space-between',gap:8}}>
+              <div style={{fontSize:13}}><i class={`ti ${directionIcon[h.type]||'ti-point'}`} style={{marginRight:5,color:directionColor[h.type]||'var(--txt3)',fontSize:14}}/>{h.text}</div>
+              {h.direction==='in'&&<span class="bdg bok txs" style={{flexShrink:0}}>+{h.qty} inn</span>}
+              {h.direction==='out'&&<span class="bdg bdn txs" style={{flexShrink:0}}>{h.qty} ut</span>}
+            </div>
+            <div style={{fontSize:11,color:'var(--txt3)',marginTop:2,fontFamily:'var(--mono)'}}>{fmtTs(h.ts)} · {h.user}</div>
+          </div>
+        </div>)}
+      </div>
+    </div>
+  </>;
+}
+
+function Notifications(){
+  const {notifs}=useApp();
+  const ic={success:'ti-circle-check',error:'ti-alert-circle',warning:'ti-alert-triangle',info:'ti-info-circle'};
+  const cc={success:'var(--br)',error:'var(--dn)',warning:'var(--wn)',info:'var(--in)'};
+  if(!notifs.length) return null;
+  return <div class="nc" role="alert" aria-live="polite">
+    {notifs.map(n=><div key={n.id} class={`nf ${n.type}`}>
+      <i class={`ti ${ic[n.type]||'ti-info-circle'}`} style={{color:cc[n.type],fontSize:16,flexShrink:0}}/>
+      <span>{n.message}</span>
+    </div>)}
+  </div>;
+}
+
+
+/* ── SharePoint Settings ─────────────────────────────────────────────────── */
+function SpSettings(){
+  const {spConfigured,spLoading,syncSharePoint,notify}=useApp();
+  const [cfg,setCfg]=useState({powerAutomateUrl:'',tenantId:'ambioas.onmicrosoft.com',clientId:'',clientSecret:'',siteId:'https://ambioas.sharepoint.com/sites/Ambiokvalitetssystem',listName:'Leverandører',statusColumn:'Status',nameColumn:'Leverandørnavn',orgNrColumn:'Organisasjonsnummer'});
+  const [mode,setMode]=useState('pa');
+  const [saving,setSaving]=useState(false);
+  const [showSecret,setShowSecret]=useState(false);
+  const save=async()=>{
+    setSaving(true);
+    try{
+      const r=await fetch('/api/sharepoint/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});
+      const d=await r.json();
+      if(d.ok){notify('SharePoint-konfigurasjon lagret','success');await syncSharePoint();}
+      else notify('Feil ved lagring','error');
+    }finally{setSaving(false);}
+  };
+  return <div>
+    <div class="f g2" style={{marginBottom:12}}>
+      <button class={`btn bsm ${mode==='pa'?'bp':''}`} onClick={()=>setMode('pa')}><i class="ti ti-bolt"/> Power Automate</button>
+      <button class={`btn bsm ${mode==='graph'?'bp':''}`} onClick={()=>setMode('graph')}><i class="ti ti-brand-azure"/> Graph API</button>
+    </div>
+    {mode==='pa'&&<>
+      <div class="sd" style={{marginBottom:10}}>
+  <strong>Enkleste metode</strong> — ingen Azure-appregistrasjon nødvendig:<br/>
+  1. Gå til <a href="https://make.powerautomate.com" target="_blank" rel="noreferrer" style={{color:'var(--in)'}}>make.powerautomate.com</a> → Ny flyt → Instant<br/>
+  2. Trigger: <strong>«When an HTTP request is received»</strong> (metode: POST)<br/>
+  3. Legg til: <strong>«Get items»</strong> fra SharePoint-listen «Leverandører»<br/>
+  4. Legg til: <strong>«Response»</strong> med Body: <code style={{background:'var(--sur2)',padding:'1px 4px',borderRadius:3,fontSize:11}}>{"@{outputs('Get_items')?['body']['value']}"}</code><br/>
+  5. Kopier <strong>HTTP POST URL</strong> og lim inn nedenfor (URL inneholder automatisk autorisasjons-nøkkel)
+</div>
+      <div class="fg"><label class="fl">Power Automate HTTP-trigger URL</label>
+        <input class="fi fmo" style={{fontSize:12}} value={cfg.powerAutomateUrl} onChange={e=>setCfg(c=>({...c,powerAutomateUrl:e.target.value}))} placeholder="https://prod-xx.westeurope.logic.azure.com/workflows/..."/>
+      </div>
+    </>}
+    {mode==='graph'&&<>
+      <div class="sd" style={{marginBottom:10}}>Krever Azure AD-appregistrasjon med <strong>Sites.Read.All</strong> tillatelse.</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+        <div class="fg"><label class="fl">Tenant ID</label><input class="fi fmo" type={showSecret?'text':'password'} value={cfg.tenantId} onChange={e=>setCfg(c=>({...c,tenantId:e.target.value}))} placeholder="contoso.onmicrosoft.com"/></div>
+        <div class="fg"><label class="fl">Client ID</label><input class="fi fmo" type={showSecret?'text':'password'} value={cfg.clientId} onChange={e=>setCfg(c=>({...c,clientId:e.target.value}))} placeholder="xxxxxxxx-xxxx-..."/></div>
+        <div class="fg"><label class="fl">Client Secret</label><input class="fi fmo" type={showSecret?'text':'password'} value={cfg.clientSecret} onChange={e=>setCfg(c=>({...c,clientSecret:e.target.value}))}/></div>
+        <div class="fg"><label class="fl">SharePoint-nettsted URL</label><input class="fi" value={cfg.siteId} onChange={e=>setCfg(c=>({...c,siteId:e.target.value}))} placeholder="https://ambio.sharepoint.com/sites/..."/></div>
+      </div>
+      <button class="btn bsm" style={{marginBottom:10}} onClick={()=>setShowSecret(v=>!v)}><i class={`ti ${showSecret?'ti-eye-off':'ti-eye'}`}/> {showSecret?'Skjul':'Vis'}</button>
+    </>}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:8}}>
+      <div class="fg"><label class="fl">Listenavn i SharePoint</label><input class="fi" value={cfg.listName} onChange={e=>setCfg(c=>({...c,listName:e.target.value}))}/></div>
+      <div class="fg"><label class="fl">Godkjenningskolonne</label><input class="fi" value={cfg.statusColumn} onChange={e=>setCfg(c=>({...c,statusColumn:e.target.value}))}/></div>
+      <div class="fg"><label class="fl">Navnekolonne</label><input class="fi" value={cfg.nameColumn} onChange={e=>setCfg(c=>({...c,nameColumn:e.target.value}))}/></div>
+      <div class="fg"><label class="fl">Org.nr-kolonne</label><input class="fi" value={cfg.orgNrColumn} onChange={e=>setCfg(c=>({...c,orgNrColumn:e.target.value}))}/></div>
+    </div>
+    <div class="f g2" style={{marginTop:4}}>
+      <button class="btn bp" onClick={save} disabled={saving||(!cfg.powerAutomateUrl&&!cfg.tenantId)}>{saving?<><i class="ti ti-loader spin"/> Lagrer…</>:<><i class="ti ti-plug"/> Lagre og test</>}</button>
+      {spConfigured&&<button class="btn bs" onClick={syncSharePoint} disabled={spLoading}><i class={`ti ${spLoading?'ti-loader spin':'ti-refresh'}`}/>{spLoading?'Henter…':'Oppdater'}</button>}
+    </div>
+    {spConfigured&&<div class="al ok" style={{marginTop:10}}><i class="ti ti-shield-check"/><span>SharePoint tilkoblet — godkjenningsstatus aktiv.</span></div>}
+  </div>;
+}
+
+/* ── Settings Page ───────────────────────────────────────────────────────── */
+function Settings(){
+  const {conn}=useApp();
+  return <>
+    <div class="ph"><span class="ph-title">Innstillinger</span></div>
+    <div class="pb" style={{maxWidth:680}}>
+      <div class="ss">
+        <div class="st">PowerOffice Go — Ambio AS (Demo)</div>
+        <div class="sd">Tilkoblet via lokal proxy. Client ID: c0be4bb8-3960-40ba-97cc-4c32ef03977c · <a href="https://developer.poweroffice.net" target="_blank" rel="noreferrer" style={{color:'var(--in)'}}>developer.poweroffice.net</a></div>
+        <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',borderRadius:'var(--rs)',fontSize:13,marginBottom:8,background:conn==='ok'?'var(--brl)':conn==='error'?'var(--dnl)':'var(--sur2)',color:conn==='ok'?'var(--brm)':conn==='error'?'var(--dn)':'var(--txt3)'}}>
+          <i class={`ti ${conn==='ok'?'ti-circle-check':conn==='error'?'ti-alert-circle':'ti-loader spin'}`}/>
+          {conn==='ok'?'Tilkoblet PowerOffice Go (Demo)':conn==='error'?'Tilkoblingsfeil — restart server':'Kobler til…'}
+        </div>
+      </div>
+      <div class="ss">
+        <div class="st">SharePoint — Godkjente leverandører</div>
+        <div class="sd">Koble til en SharePoint-liste for å sjekke leverandørgodkjenning. Ikke-godkjente leverandører blokkeres fra nye innkjøpsordrer.</div>
+        <SpSettings/>
+      </div>
+      <div class="ss">
+        <div class="st">Database</div>
+        <div class="sd">Data lagres i <strong>ambio-data.json</strong> i server-mappen med automatisk backup.</div>
+      </div>
+      <div class="ss">
+        <div class="st">Om</div>
+        <div class="sd"><strong>Ambio Innkjøp og varer</strong> v1.0.0 · PowerOffice Go + SharePoint-integrasjon.</div>
+      </div>
+    </div>
+  </>;
+}
+
+const PAGES=[
+  {id:'products',label:'Produkter',icon:'ti-package',sec:'PowerOffice Go'},
+  {id:'statistics',label:'Statistikk',icon:'ti-chart-bar',sec:'PowerOffice Go'},
+  {id:'suppliers',label:'Leverandører',icon:'ti-building-store'},
+  {id:'orders',label:'Innkjøpsordrer',icon:'ti-file-invoice',sec:'Innkjøp'},
+  {id:'history',label:'Aktivitetslogg',icon:'ti-history'},
+  {id:'settings',label:'Innstillinger',icon:'ti-settings',sec:'Konfigurasjon'},
+];
+const COMPS={products:Products,suppliers:Suppliers,orders:Orders,history:History,statistics:Statistics,settings:Settings};
+
+
+/* Statistics Page */
+function Statistics(){
+  const {notify} = useApp();
+  const [tab, setTab] = useState('oversikt');
+  const today = new Date();
+  const thisYearFrom = `${today.getFullYear()}-01-01`;
+  const todayStr = today.toISOString().slice(0,10);
+  const lastYearFrom = `${today.getFullYear()-1}-01-01`;
+  const lastYearTo = `${today.getFullYear()-1}-12-31`;
+
+  const PRESETS = [
+    { label:'Denne mnd', from:`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`, to:todayStr },
+    { label:'Forrige mnd', from:new Date(today.getFullYear(),today.getMonth()-1,1).toISOString().slice(0,10), to:new Date(today.getFullYear(),today.getMonth(),0).toISOString().slice(0,10) },
+    { label:'I år', from:thisYearFrom, to:todayStr },
+    { label:'Forrige år', from:lastYearFrom, to:lastYearTo },
+    { label:'Siste 3 mnd', from:new Date(today.getFullYear(),today.getMonth()-3,today.getDate()).toISOString().slice(0,10), to:todayStr },
+    { label:'Siste 12 mnd', from:new Date(today.getFullYear()-1,today.getMonth(),today.getDate()).toISOString().slice(0,10), to:todayStr },
+  ];
+
+  const [from, setFrom] = useState(PRESETS[2].from);
+  const [to, setTo] = useState(PRESETS[2].to);
+  const [cmpFrom, setCmpFrom] = useState(PRESETS[3].from);
+  const [cmpTo, setCmpTo] = useState(PRESETS[3].to);
+  const [showCmp, setShowCmp] = useState(false);
+  const [activePreset, setActivePreset] = useState(2);
+  const [data, setData] = useState(null);
+  const [cmpData, setCmpData] = useState(null);
+  const [loadingData, setLoadingData] = useState(false);
+  const [error, setError] = useState('');
+
+  const TABS = [{id:'oversikt',label:'Oversikt'},{id:'produkt',label:'Per produkt'},{id:'kunde',label:'Per kunde'},{id:'tid',label:'Over tid'},{id:'fakturaer',label:'Fakturaer'}];
+
+  const krS = n => { const v=Number(n||0); if(v>=1000000) return `kr ${(v/1000000).toFixed(1)}M`; if(v>=1000) return `kr ${(v/1000).toFixed(1)}k`; return `kr ${v.toLocaleString('nb-NO',{maximumFractionDigits:0})}`; };
+  const pct = (a,b) => b ? ((a-b)/b*100).toFixed(1) : null;
+  const fmtD = d => d ? new Date(d).toLocaleDateString('nb-NO',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+
+  // Simple SVG charts (no external dependency needed)
+  const hasCharts = true;
+  // Minimal chart components implemented with SVG
+  const SimpleBarChart = ({data, valueKey='revenue', labelKey='label', height=260, colors, formatter}) => {
+    if (!data || !data.length) return null;
+    const max = Math.max(...data.map(d=>d[valueKey]||0), 1);
+    const W = 100/data.length;
+    const COLORS2 = colors || ['#1B5E3B','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316'];
+    return <div style={{position:'relative',width:'100%',height:height,overflow:'hidden'}}>
+      <svg width="100%" height={height} viewBox={`0 0 ${data.length*60} ${height}`} preserveAspectRatio="none" style={{position:'absolute',top:0,left:0}}>
+        {data.map((d,i) => {
+          const barH = Math.max(2, ((d[valueKey]||0)/max)*(height-40));
+          const x = i*60+6; const barW = 48;
+          const y = height-40-barH;
+          return <g key={i}>
+            <rect x={x} y={y} width={barW} height={barH} rx={3} fill={COLORS2[i%COLORS2.length]} opacity={0.9}/>
+          </g>;
+        })}
+      </svg>
+      <div style={{position:'absolute',bottom:0,left:0,right:0,display:'flex',height:38}}>
+        {data.map((d,i)=><div key={i} style={{flex:1,fontSize:9,color:'var(--txt3)',textAlign:'center',padding:'2px 1px',overflow:'hidden',lineHeight:1.2}}>{(d[labelKey]||'').slice(0,10)}</div>)}
+      </div>
+    </div>;
+  };
+  const SimpleGroupedChart = ({data, key1='current', key2='compare', labelKey='label', height=260}) => {
+    if (!data || !data.length) return null;
+    const max = Math.max(...data.flatMap(d=>[d[key1]||0, d[key2]||0]), 1);
+    return <div style={{position:'relative',width:'100%',height:height,overflow:'hidden'}}>
+      <svg width="100%" height={height} viewBox={`0 0 ${data.length*70} ${height}`} preserveAspectRatio="none" style={{position:'absolute',top:0,left:0}}>
+        {data.map((d,i) => {
+          const h1 = Math.max(2,((d[key1]||0)/max)*(height-40));
+          const h2 = Math.max(2,((d[key2]||0)/max)*(height-40));
+          const base = i*70+4;
+          return <g key={i}>
+            <rect x={base} y={height-40-h1} width={28} height={h1} rx={3} fill="#1B5E3B" opacity={0.9}/>
+            <rect x={base+30} y={height-40-h2} width={28} height={h2} rx={3} fill="#3B82F6" opacity={0.75}/>
+          </g>;
+        })}
+      </svg>
+      <div style={{position:'absolute',bottom:0,left:0,right:0,display:'flex',height:38}}>
+        {data.map((d,i)=><div key={i} style={{flex:1,fontSize:9,color:'var(--txt3)',textAlign:'center',padding:'2px 1px',overflow:'hidden',lineHeight:1.2}}>{(d[labelKey]||'').slice(0,10)}</div>)}
+      </div>
+    </div>;
+  };
+  const SimpleAreaChart = ({data, valueKey='current', labelKey='label', height=220}) => {
+    if (!data || !data.length) return null;
+    const max = Math.max(...data.map(d=>d[valueKey]||0), 1);
+    const W = 100/(data.length-1||1);
+    const pts = data.map((d,i)=>{
+      const x = (i/(data.length-1||1))*100;
+      const y = 100-((d[valueKey]||0)/max)*85;
+      return `${x},${y}`;
+    }).join(' ');
+    const area = `0,100 ${pts} 100,100`;
+    return <div style={{width:'100%',height:height,position:'relative'}}>
+      <svg width="100%" height={height} viewBox="0 0 100 100" preserveAspectRatio="none">
+        <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1B5E3B" stopOpacity="0.25"/><stop offset="100%" stopColor="#1B5E3B" stopOpacity="0.03"/></linearGradient></defs>
+        <polygon points={area} fill="url(#ag)"/>
+        <polyline points={pts} fill="none" stroke="#1B5E3B" strokeWidth="1.5" vectorEffect="non-scaling-stroke"/>
+        {data.map((d,i)=>{const x=(i/(data.length-1||1))*100;const y=100-((d[valueKey]||0)/max)*85;return <circle key={i} cx={x} cy={y} r="1.5" fill="#1B5E3B" vectorEffect="non-scaling-stroke"/>;})}
+      </svg>
+      <div style={{position:'absolute',bottom:0,left:0,right:0,display:'flex',justifyContent:'space-between',padding:'0 2px'}}>
+        {data.filter((_,i)=>i===0||i===data.length-1||(data.length>4&&i%Math.ceil(data.length/4)===0)).map((d,i)=><span key={i} style={{fontSize:9,color:'var(--txt3)'}}>{d[labelKey]}</span>)}
+      </div>
+    </div>;
+  };
+
+  const COLORS = ['#1B5E3B','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316'];
+
+  const fetchStats = useCallback(async () => {
+    setLoadingData(true); setError('');
+    try {
+      const r = await fetch(`/api/stats/sales?from=${from}&to=${to}`);
+      if (!r.ok) { const e=await r.json(); throw new Error(e.error||`HTTP ${r.status}`); }
+      setData(await r.json());
+      if (showCmp) {
+        const r2 = await fetch(`/api/stats/sales?from=${cmpFrom}&to=${cmpTo}`);
+        if (r2.ok) setCmpData(await r2.json()); else setCmpData(null);
+      } else { setCmpData(null); }
+    } catch(e) { setError(e.message); notify(`Statistikkfeil: ${e.message}`,'error'); }
+    finally { setLoadingData(false); }
+  }, [from, to, cmpFrom, cmpTo, showCmp, notify]);
+
+  useEffect(() => { fetchStats(); }, []);
+
+  const applyPreset = (i) => { setActivePreset(i); setFrom(PRESETS[i].from); setTo(PRESETS[i].to); };
+
+  const DiffBadge = ({cur, cmp}) => {
+    const d = pct(cur, cmp);
+    if (d===null) return null;
+    const up = +d > 0;
+    return <span class={`compare-badge ${up?'up':+d<0?'down':'neutral'}`}>{up?'↑':'↓'}{Math.abs(d)}%</span>;
+  };
+
+  const MetricCard = ({label, value, cmpVal, isKr=true}) => {
+    const fmt = v => isKr ? krS(v) : Number(v||0).toLocaleString('nb-NO');
+    return <div class="cmp-card">
+      <div class="cmp-label">{label}</div>
+      <div class="cmp-val">{fmt(value)}</div>
+      {showCmp && cmpVal!=null && <div class="cmp-diff"><DiffBadge cur={value} cmp={cmpVal}/><span class="txs tm">{cmpFrom.slice(0,4)}→{cmpTo.slice(0,7)}</span></div>}
+    </div>;
+  };
+
+  const RankList = ({items, valueKey='revenue', labelKey='name', subFn}) => {
+    const max = items[0]?.[valueKey] || 1;
+    return <>{items.map((item,i) => <div class="rank-row" key={i}>
+      <div class={`rank-num ${i<3?'top':''}`}>{i+1}</div>
+      <div class="rank-bar-wrap">
+        <div class="rank-label">{item[labelKey]}{item.code&&<span class="txs tm"> [{item.code}]</span>}</div>
+        <div class="rank-bar-bg"><div class="rank-bar-fill" style={{width:`${(item[valueKey]/max*100).toFixed(1)}%`}}/></div>
+      </div>
+      <div class="rank-val">{krS(item[valueKey])}<div class="rank-sub">{subFn?subFn(item):''}</div></div>
+    </div>)}</>;
+  };
+
+  return <>
+    <div class="ph">
+      <span class="ph-title">Salgsstatistikk</span>
+      <div class="ph-acts">
+        {data&&!loadingData&&<span class="txs tm">{data.invoiceCount} faktura{data.invoiceCount!==1?'er':''} · {krS(data.totalRevenue)}</span>}
+        <button class="btn bp bsm" onClick={fetchStats} disabled={loadingData}>
+          <i class={`ti ${loadingData?'ti-loader spin':'ti-refresh'}`}/>{loadingData?'Henter…':'Hent data'}
+        </button>
+      </div>
+    </div>
+    <div class="pb">
+
+      {/* Period picker */}
+      <div class="period-row">
+        <div>
+          <div style={{marginBottom:6,fontSize:12,fontWeight:600,color:'var(--txt2)'}}>Velg periode</div>
+          <div class="period-preset">
+            {PRESETS.map((p,i)=><button key={i} class={`pp-btn ${activePreset===i?'act':''}`} onClick={()=>applyPreset(i)}>{p.label}</button>)}
+          </div>
+        </div>
+        <div class="f ic g2" style={{marginLeft:'auto',flexWrap:'wrap',alignItems:'flex-end'}}>
+          <div><label class="fl" style={{fontSize:11}}>Fra</label><input class="fi" type="date" value={from} style={{width:148}} onChange={e=>{setFrom(e.target.value);setActivePreset(-1);}}/></div>
+          <div><label class="fl" style={{fontSize:11}}>Til</label><input class="fi" type="date" value={to} style={{width:148}} onChange={e=>{setTo(e.target.value);setActivePreset(-1);}}/></div>
+        </div>
+        <div class="f ic g2" style={{flexWrap:'wrap',alignItems:'flex-end'}}>
+          <label class="f ic g2" style={{fontSize:12,color:'var(--txt2)',cursor:'pointer'}}>
+            <input type="checkbox" checked={showCmp} onChange={e=>setShowCmp(e.target.checked)} style={{accentColor:'var(--br)'}}/>
+            Sammenlign med:
+          </label>
+          {showCmp&&<>
+            <div><label class="fl" style={{fontSize:11}}>Fra</label><input class="fi" type="date" value={cmpFrom} style={{width:148}} onChange={e=>setCmpFrom(e.target.value)}/></div>
+            <div><label class="fl" style={{fontSize:11}}>Til</label><input class="fi" type="date" value={cmpTo} style={{width:148}} onChange={e=>setCmpTo(e.target.value)}/></div>
+          </>}
+        </div>
+      </div>
+
+      {error&&<div class="al warn"><i class="ti ti-alert-triangle"/><span>{error}</span></div>}
+      {!data&&!loadingData&&<div class="empty-stats"><i class="ti ti-chart-bar-off"/><p>Klikk <strong>Hent data</strong> for å laste salgsstatistikk fra PowerOffice Go.</p></div>}
+      {loadingData&&<div class="empty-stats"><i class="ti ti-loader spin"/><p>Henter fakturadata fra PowerOffice Go…<br/><span class="txs tm">Henter fakturaer og linjer — kan ta noen sekunder.</span></p></div>}
+      {data&&!loadingData&&data.invoiceCount===0&&<div class="al info" style={{marginBottom:12}}><i class="ti ti-info-circle"/><div><strong>Ingen fakturaer funnet i demomiljøet for denne perioden.</strong><br/><span class="txs">PowerOffice Go demomiljøet har begrenset testdata. Prøv en lengre periode (f.eks. «Siste 12 mnd» eller «Forrige år»), eller opprett testfakturaer i POGO-demo.</span></div></div>}
+
+      {data&&!loadingData&&<>
+        {/* Tabs */}
+        <div class="stat-tabs">
+          {TABS.map(t=><button key={t.id} class={`stat-tab ${tab===t.id?'act':''}`} onClick={()=>setTab(t.id)}>{t.label}</button>)}
+        </div>
+
+        {/* OVERSIKT */}
+        {tab==='oversikt'&&<>
+          <div class="cmp-grid">
+            <MetricCard label="Total omsetning" value={data.totalRevenue} cmpVal={cmpData?.totalRevenue}/>
+            <MetricCard label="Antall fakturaer" value={data.invoiceCount} cmpVal={cmpData?.invoiceCount} isKr={false}/>
+            <MetricCard label="Solgte enheter" value={data.totalQty} cmpVal={cmpData?.totalQty} isKr={false}/>
+            <MetricCard label="Gj.snitt per faktura" value={data.invoiceCount?(data.totalRevenue/data.invoiceCount):0} cmpVal={cmpData?.invoiceCount?(cmpData.totalRevenue/cmpData.invoiceCount):null}/>
+          </div>
+          {data.byMonth?.length>0&&hasCharts&&<div class="card">
+            <div class="card-hd"><span class="card-title">Omsetning over tid</span></div>
+            <div style={{padding:'16px 8px'}}>
+              <SimpleAreaChart data={data.byMonth.map(m=>({label:m.label,current:m.revenue}))} valueKey="current" labelKey="label" height={220}/>
+            </div>
+          </div>}
+          {data.byProduct?.length>0&&<div class="card">
+            <div class="card-hd"><span class="card-title">Topp produkter</span></div>
+            <RankList items={data.byProduct.slice(0,5)} subFn={p=>`${p.qty.toLocaleString('nb-NO')} stk · ${p.customerCount} kunder`}/>
+          </div>}
+          {data.byCustomer?.length>0&&<div class="card">
+            <div class="card-hd"><span class="card-title">Topp kunder</span></div>
+            <RankList items={data.byCustomer.slice(0,5)} labelKey="name" subFn={c=>`${c.invoiceCount} fakturaer · ${c.productCount} produkter`}/>
+          </div>}
+        </>}
+
+        {/* PRODUKT */}
+        {tab==='produkt'&&<>
+          {data.byProduct?.length===0
+            ? <div class="empty-stats"><i class="ti ti-package-off"/><p>Ingen produktlinjer funnet i fakturaene for perioden.</p></div>
+            : <div class="card">
+              <div class="card-hd"><span class="card-title">{data.byProduct.length} produkter — omsetning per produkt</span></div>
+              {hasCharts&&<div style={{padding:'16px 8px'}}>
+                <SimpleBarChart data={data.byProduct.slice(0,12).map(p=>({label:p.name.length>14?p.name.slice(0,12)+'…':p.name,revenue:p.revenue}))} valueKey="revenue" labelKey="label" height={280}/>
+              </div>}
+              <table class="dt">
+                <thead><tr><th>#</th><th>Produkt</th><th>Kode</th><th style={{textAlign:'right'}}>Antall</th><th style={{textAlign:'right'}}>Omsetning</th><th style={{textAlign:'right'}}>Kunder</th><th style={{textAlign:'right'}}>Fakturaer</th>{showCmp&&cmpData&&<><th style={{textAlign:'right'}}>Forrige per.</th><th style={{textAlign:'right'}}>Endring</th></>}</tr></thead>
+                <tbody>{data.byProduct.map((p,i)=>{
+                  const cmpP = showCmp&&cmpData ? cmpData.byProduct.find(x=>x.name===p.name) : null;
+                  return <tr key={i}>
+                    <td class="txs tm">{i+1}</td>
+                    <td class="fw5">{p.name}</td>
+                    <td class="fmo tsm tm">{p.code||'—'}</td>
+                    <td style={{textAlign:'right'}} class="fmo">{p.qty.toLocaleString('nb-NO')}</td>
+                    <td style={{textAlign:'right'}} class="fmo fsb">{krS(p.revenue)}</td>
+                    <td style={{textAlign:'right'}} class="tsm">{p.customerCount}</td>
+                    <td style={{textAlign:'right'}} class="tsm tm">{p.invoiceCount}</td>
+                    {showCmp&&cmpData&&<td style={{textAlign:'right'}} class="fmo tsm tm">{cmpP?krS(cmpP.revenue):'—'}</td>}
+                    {showCmp&&cmpData&&<td style={{textAlign:'right'}}>{cmpP?<DiffBadge cur={p.revenue} cmp={cmpP.revenue}/>:<span class="txs tm">—</span>}</td>}
+                  </tr>;
+                })}</tbody>
+              </table>
+            </div>}
+        </>}
+
+        {/* KUNDE */}
+        {tab==='kunde'&&<>
+          {data.byCustomer?.length===0
+            ? <div class="empty-stats"><i class="ti ti-users-group"/><p>Ingen kundeinformasjon funnet for perioden.</p></div>
+            : <div class="card">
+              <div class="card-hd"><span class="card-title">{data.byCustomer.length} kunder</span></div>
+              {hasCharts&&<div style={{padding:'16px 8px'}}>
+                <SimpleBarChart data={data.byCustomer.slice(0,12).map(c=>({label:c.name.length>14?c.name.slice(0,12)+'…':c.name,revenue:c.revenue}))} valueKey="revenue" labelKey="label" height={260}/>
+              </div>}
+              <table class="dt">
+                <thead><tr><th>#</th><th>Kunde</th><th style={{textAlign:'right'}}>Fakturaer</th><th style={{textAlign:'right'}}>Enheter</th><th style={{textAlign:'right'}}>Omsetning</th><th style={{textAlign:'right'}}>Produkter</th><th style={{textAlign:'right'}}>Gj.snitt/faktura</th>{showCmp&&cmpData&&<><th style={{textAlign:'right'}}>Forrige per.</th><th style={{textAlign:'right'}}>Endring</th></>}</tr></thead>
+                <tbody>{data.byCustomer.map((c,i)=>{
+                  const cmpC=showCmp&&cmpData?cmpData.byCustomer.find(x=>x.id===c.id):null;
+                  return <tr key={i}>
+                    <td class="txs tm">{i+1}</td>
+                    <td class="fw5">{c.name}</td>
+                    <td style={{textAlign:'right'}} class="tsm">{c.invoiceCount}</td>
+                    <td style={{textAlign:'right'}} class="fmo tsm">{c.qty.toLocaleString('nb-NO')}</td>
+                    <td style={{textAlign:'right'}} class="fmo fsb">{krS(c.revenue)}</td>
+                    <td style={{textAlign:'right'}} class="tsm tm">{c.productCount}</td>
+                    <td style={{textAlign:'right'}} class="fmo tsm tm">{krS(c.invoiceCount?c.revenue/c.invoiceCount:0)}</td>
+                    {showCmp&&cmpData&&<td style={{textAlign:'right'}} class="fmo tsm tm">{cmpC?krS(cmpC.revenue):'—'}</td>}
+                    {showCmp&&cmpData&&<td style={{textAlign:'right'}}>{cmpC?<DiffBadge cur={c.revenue} cmp={cmpC.revenue}/>:<span class="txs tm">Ny</span>}</td>}
+                  </tr>;
+                })}</tbody>
+              </table>
+            </div>}
+        </>}
+
+        {/* TID */}
+        {tab==='tid'&&<>
+          {data.byMonth?.length>0&&<div class="card">
+            <div class="card-hd"><span class="card-title">Per måned</span></div>
+            {hasCharts&&<div style={{padding:'16px 8px'}}>
+              <>{showCmp&&cmpData
+                ? <SimpleGroupedChart data={(() => {const map={};data.byMonth.forEach(m=>{map[m.key]={label:m.label,current:m.revenue};});cmpData.byMonth.forEach(m=>{if(!map[m.key])map[m.key]={label:m.label,current:0};map[m.key].compare=m.revenue;});return Object.values(map).sort((a,b)=>(a.label||'').localeCompare(b.label||''));})()}  key1="current" key2="compare" labelKey="label" height={260}/>
+                : <SimpleBarChart data={data.byMonth.map(m=>({label:m.label,revenue:m.revenue}))} valueKey="revenue" labelKey="label" height={260}/>}
+              </>
+            </div>}
+            <table class="dt">
+              <thead><tr><th>Måned</th><th style={{textAlign:'right'}}>Fakturaer</th><th style={{textAlign:'right'}}>Enheter</th><th style={{textAlign:'right'}}>Omsetning</th>{showCmp&&cmpData&&<><th style={{textAlign:'right'}}>Forrige per.</th><th style={{textAlign:'right'}}>Endring</th></>}</tr></thead>
+              <tbody>{data.byMonth.map((m,i)=>{
+                const cmpM=showCmp&&cmpData?cmpData.byMonth.find(x=>x.key===m.key):null;
+                return <tr key={i}>
+                  <td class="fw5">{m.label}</td>
+                  <td style={{textAlign:'right'}} class="tsm">{m.invoiceCount}</td>
+                  <td style={{textAlign:'right'}} class="fmo tsm">{m.qty.toLocaleString('nb-NO')}</td>
+                  <td style={{textAlign:'right'}} class="fmo fsb">{krS(m.revenue)}</td>
+                  {showCmp&&cmpData&&<td style={{textAlign:'right'}} class="fmo tsm tm">{cmpM?krS(cmpM.revenue):'—'}</td>}
+                  {showCmp&&cmpData&&<td style={{textAlign:'right'}}>{cmpM?<DiffBadge cur={m.revenue} cmp={cmpM.revenue}/>:<span class="txs tm">—</span>}</td>}
+                </tr>;
+              })}</tbody>
+            </table>
+          </div>}
+          {data.byYear?.length>0&&<div class="card">
+            <div class="card-hd"><span class="card-title">Per år</span></div>
+            {hasCharts&&<div style={{padding:'16px 8px'}}>
+              <SimpleBarChart data={data.byYear.map(y=>({label:y.label,revenue:y.revenue}))} valueKey="revenue" labelKey="label" height={180}/>
+            </div>}
+            <table class="dt">
+              <thead><tr><th>År</th><th style={{textAlign:'right'}}>Fakturaer</th><th style={{textAlign:'right'}}>Enheter</th><th style={{textAlign:'right'}}>Omsetning</th></tr></thead>
+              <tbody>{data.byYear.map((y,i)=><tr key={i}>
+                <td class="fw5">{y.label}</td>
+                <td style={{textAlign:'right'}} class="tsm">{y.invoiceCount}</td>
+                <td style={{textAlign:'right'}} class="fmo tsm">{y.qty.toLocaleString('nb-NO')}</td>
+                <td style={{textAlign:'right'}} class="fmo fsb">{krS(y.revenue)}</td>
+              </tr>)}</tbody>
+            </table>
+          </div>}
+        </>}
+
+        {/* FAKTURAER */}
+        {tab==='fakturaer'&&<div class="card">
+          <div class="card-hd">
+            <span class="card-title">{data.invoices?.length} fakturaer — {from} til {to}</span>
+          </div>
+          {!data.invoices?.length
+            ? <div class="empty-stats"><i class="ti ti-receipt-off"/><p>Ingen fakturaer funnet i perioden.</p></div>
+            : <table class="dt">
+              <thead><tr><th>Faktura nr.</th><th>Dato</th><th>Kunde</th><th style={{textAlign:'right'}}>Linjer</th><th style={{textAlign:'right'}}>Beløp</th><th>Status</th></tr></thead>
+              <tbody>{data.invoices.map((inv,i)=><tr key={i}>
+                <td class="fmo fsb">{inv.invoiceNo}</td>
+                <td class="tsm tm">{fmtD(inv.date)}</td>
+                <td class="fw5">{inv.customerName}</td>
+                <td style={{textAlign:'right'}} class="tsm tm">{inv.lineCount}</td>
+                <td style={{textAlign:'right'}} class="fmo fsb">{krS(inv.totalAmount)}</td>
+                <td><span class="bdg bgr">{inv.status||'—'}</span></td>
+              </tr>)}</tbody>
+            </table>}
+        </div>}
+      </>}
+    </div>
+  </>;
+}
+
+function Shell(){
+  const {conn,connErr,orders,dbReady}=useApp();
+  const [page,setPage]=useState('products');
+  const [col,setCol]=useState(false);
+  const Active=COMPS[page]||Products;
+  if(!dbReady) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12,color:'var(--txt3)',fontFamily:'var(--font)'}}>
+    <i class="ti ti-database" style={{fontSize:36}}/>
+    <div style={{fontSize:14}}>Laster data fra database…</div>
+  </div>;
+  return <div class="app">
+    <aside class={`sb ${col?'c':''}`}>
+      <div class="sb-hd">
+        <div class="logo"><i class="ti ti-building-warehouse"/>{!col&&<span>Ambio Innkjøp<br/><small>og varer</small></span>}</div>
+        <button class="sb-tog" onClick={()=>setCol(v=>!v)} title="Veksle meny"><i class={`ti ${col?'ti-layout-sidebar-left-expand':'ti-layout-sidebar-left-collapse'}`}/></button>
+      </div>
+      <div class={`conn-pill ${conn==='ok'?'ok':conn==='error'?'err':'loading'}`}>
+        <i class={`ti ${conn==='ok'?'ti-circle-check':conn==='error'?'ti-alert-circle':'ti-loader spin'}`} style={{fontSize:13,flexShrink:0}}/>
+        {!col&&<span>{conn==='ok'?'PowerOffice Go tilkoblet':conn==='error'?'Tilkoblingsfeil':'Kobler til…'}</span>}
+      </div>
+      <nav class="sb-nav">
+        {PAGES.map((p,i)=>{
+          const prev=PAGES[i-1];
+          return <div key={p.id}>
+            {p.sec&&p.sec!==prev?.sec&&!col&&<div class="nav-sec">{p.sec}</div>}
+            <button class={`nav-btn ${page===p.id?'act':''}`} onClick={()=>setPage(p.id)} title={col?p.label:undefined}>
+              <i class={`ti ${p.icon}`}/>
+              {!col&&<span>{p.label}</span>}
+              {p.id==='orders'&&(()=>{const pend=orders.filter(o=>o.status==='pending_approval').length;const total=orders.length;return pend>0?<span class="nav-bdg">{pend}⚡</span>:total>0?<span class="nav-bdg">{total}</span>:null;})()}
+            </button>
+          </div>;
+        })}
+      </nav>
+      {conn==='error'&&!col&&<div style={{margin:8,padding:'9px 10px',background:'var(--dnl)',border:'1px solid rgba(185,28,28,.2)',borderRadius:'var(--rs)',fontSize:11,color:'var(--dn)'}}>
+        <i class="ti ti-alert-triangle"/> {connErr}
+      </div>}
+    </aside>
+    <main class="main"><Active/></main>
+    <Notifications/>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<AppProvider><Shell/></AppProvider>);
+</script>
+</body>
+</html>
