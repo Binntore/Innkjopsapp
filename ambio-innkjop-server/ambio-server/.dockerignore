@@ -1,0 +1,8 @@
+# flyctl launch added from .gitignore
+**/node_modules
+**/ambio-data.json
+**/ambio-data.backup.json
+**/ambio-data.tmp.json
+**/*.log
+**/.env
+fly.toml
