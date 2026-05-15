@@ -9,9 +9,9 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
-    "crypto": "^1.0.1",
     "express": "^4.19.2",
-    "express-session": "^1.19.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "express-session": "^1.18.0",
+    "crypto": "^1.0.1"
   }
 }
