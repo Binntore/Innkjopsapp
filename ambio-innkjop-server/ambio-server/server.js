@@ -8,6 +8,7 @@
  */
 
 import express from 'express';
+import fs from 'fs';
 import fetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -199,6 +200,10 @@ app.get('/api/stats/sales', async (req, res) => {
     }
 
     console.log(`[Stats] ${invoices.length} fakturaer funnet`);
+    if (invoices.length > 0) {
+      console.log('[Stats] Invoice felt:', Object.keys(invoices[0]).join(', '));
+      console.log('[Stats] Første faktura (forkortet):', JSON.stringify(invoices[0]).slice(0, 400));
+    }
 
     // 2. Fetch lines for each invoice (batches of 10)
     const enriched = [];
@@ -211,12 +216,45 @@ app.get('/api/stats/sales', async (req, res) => {
         let lines = [];
         if (Array.isArray(lData)) lines = lData;
         else if (lData && Array.isArray(lData.data)) lines = lData.data;
+        if (lines.length > 0 && enriched.length === 0) {
+          console.log('[Stats] Fakturalinje-felt:', Object.keys(lines[0]).join(', '));
+          console.log('[Stats] Første linje RAW:', JSON.stringify(lines[0]));
+        }
         return { ...inv, lines };
       }));
       enriched.push(...results);
     }
 
-    // 3. Aggregate
+    // 3. Fetch customer names — try Contacts endpoint (POGO stores customers as contacts)
+    const customerIds = [...new Set(enriched.map(inv => inv.CustomerId).filter(Boolean))];
+    const customerNames = {};
+
+    // First try: GET /Contacts?customerGroupId=... or individual lookups
+    for (const cid of customerIds) {
+      try {
+        // Try /Contacts/{id} first
+        let cr = await pogGet(`/Contacts/${cid}`);
+        if (!cr || (!cr.Name && !cr.LegalName)) {
+          // Try /Customers endpoint
+          cr = await pogGet(`/Customers/${cid}`);
+        }
+        if (cr) {
+          const name = cr.Name || cr.LegalName || cr.FirstName && cr.LastName
+            ? `${cr.FirstName||''} ${cr.LastName||''}`.trim()
+            : null;
+          customerNames[cid] = name || `Kunde ${cid}`;
+          console.log(`[Stats] Kunde ${cid} → ${customerNames[cid]} (felt: ${Object.keys(cr).join(',')})`);
+        } else {
+          customerNames[cid] = `Kunde ${cid}`;
+        }
+      } catch(e) {
+        console.log(`[Stats] Kunde ${cid} lookup feilet: ${e.message}`);
+        customerNames[cid] = `Kunde ${cid}`;
+      }
+    }
+    console.log('[Stats] Kundenavn:', JSON.stringify(customerNames));
+
+    // 4. Aggregate with confirmed POGO field names
     const byProduct = {}, byCustomer = {}, byMonth = {}, byYear = {};
     const invoiceList = [];
 
@@ -227,15 +265,17 @@ app.get('/api/stats/sales', async (req, res) => {
     };
 
     for (const inv of enriched) {
-      // POGO OutgoingInvoice fields are Pascal case: OrderDate, InvoiceDate, CustomerAccountId etc
-      const dateStr = inv.OrderDate || inv.InvoiceDate || inv.SalesDate || inv.DocumentDate || inv.orderDate || inv.invoiceDate || inv.date || '';
-      const date = dateStr ? new Date(dateStr) : null;
-      const monthKey = date && !isNaN(date) ? `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}` : 'ukjent';
+      // Confirmed POGO field names from debug log:
+      const dateStr  = inv.VoucherDate || inv.OrderDate || inv.InvoiceDate || '';
+      const date     = dateStr ? new Date(dateStr) : null;
+      const monthKey = date && !isNaN(date)
+        ? `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`
+        : 'ukjent';
       const yearKey  = date && !isNaN(date) ? String(date.getFullYear()) : 'ukjent';
 
-      // Pascal case customer fields from POGO
-      const custId   = String(inv.CustomerAccountId || inv.CustomerId || inv.customerId || inv.customerAccountId || inv.contactId || 'ukjent');
-      const custName = inv.CustomerName || inv.ContactName || inv.customerName || inv.customer?.name || `Kunde ${custId}`;
+      // CustomerId is a number — look up name from pre-fetched map
+      const custId   = String(inv.CustomerId || inv.CustomerAccountId || 'ukjent');
+      const custName = customerNames[inv.CustomerId] || inv.CustomerName || `Kunde ${custId}`;
 
       if (!byCustomer[custId]) byCustomer[custId] = { id:custId, name:custName, revenue:0, qty:0, invoiceCount:0, products:new Set() };
       if (!byMonth[monthKey])  byMonth[monthKey]  = { key:monthKey, label:monthLabel(monthKey), revenue:0, qty:0, invoiceCount:0 };
@@ -247,12 +287,14 @@ app.get('/api/stats/sales', async (req, res) => {
       let invRevenue = 0;
 
       for (const line of (inv.lines || [])) {
-        // POGO invoice line fields are Pascal case
-        const productCode = line.ProductCode || line.productCode || line.code || line.itemCode || '';
-        const productName = line.ProductName || line.Description || line.productName || line.description || line.text || line.itemName || 'Ukjent produkt';
-        const qty       = Number(line.Quantity || line.quantity || line.qty || 0);
-        const unitPrice = Number(line.UnitPrice || line.unitPrice || line.unitSalesPrice || line.price || 0);
-        const lineTotal = Number(line.LineAmount || line.Amount || line.lineAmount || line.amount || line.totalAmount || (qty * unitPrice) || 0);
+        // Confirmed line field names from debug log:
+        // Description = product name, ProductCode = code, Quantity = qty
+        // NetAmount = line total (ex VAT), TotalAmount = incl VAT
+        const productCode = line.ProductCode || line.productCode || '';
+        const productName = (line.Description || line.productName || 'Ukjent produkt')
+          .split('\n')[0].trim(); // Description may have newlines — take first line
+        const qty       = Number(line.Quantity || line.quantity || 0);
+        const lineTotal = Number(line.NetAmount || line.TotalAmount || 0); // use NetAmount (ex VAT)
         const prodKey   = productCode || productName;
 
         if (!byProduct[prodKey]) byProduct[prodKey] = { code:productCode, name:productName, qty:0, revenue:0, customers:new Set(), invoiceCount:0 };
@@ -261,33 +303,33 @@ app.get('/api/stats/sales', async (req, res) => {
         byProduct[prodKey].customers.add(custId);
         byProduct[prodKey].invoiceCount++;
 
-        byCustomer[custId].qty     += qty;
-        byCustomer[custId].revenue += lineTotal;
+        byCustomer[custId].qty      += qty;
+        byCustomer[custId].revenue  += lineTotal;
         byCustomer[custId].products.add(prodKey);
-        byMonth[monthKey].revenue  += lineTotal;
-        byMonth[monthKey].qty      += qty;
-        byYear[yearKey].revenue    += lineTotal;
-        byYear[yearKey].qty        += qty;
+        byMonth[monthKey].revenue   += lineTotal;
+        byMonth[monthKey].qty       += qty;
+        byYear[yearKey].revenue     += lineTotal;
+        byYear[yearKey].qty         += qty;
         invRevenue += lineTotal;
       }
 
-      // Fallback: use invoice-level amount if no lines found
+      // Fallback: use invoice-level NetAmount if no lines processed
       if (invRevenue === 0) {
-        invRevenue = Number(inv.grossAmount || inv.totalAmount || inv.amount || inv.netAmount || 0);
+        invRevenue = Number(inv.NetAmount || inv.TotalAmount || 0);
         byCustomer[custId].revenue += invRevenue;
         byMonth[monthKey].revenue  += invRevenue;
         byYear[yearKey].revenue    += invRevenue;
       }
 
       invoiceList.push({
-        id:          inv.Id ?? inv.id,
-        invoiceNo:   inv.InvoiceNo || inv.VoucherNo || inv.OrderNo || inv.DocumentNo || inv.invoiceNo || inv.voucherNo || String(inv.Id||inv.id||''),
-        date:        dateStr,
+        id:           inv.Id,
+        invoiceNo:    inv.InvoiceNo || inv.VoucherNo || inv.OrderNo || String(inv.Id||''),
+        date:         dateStr,
         customerName: custName,
-        customerId:  custId,
-        totalAmount: invRevenue || Number(inv.GrossAmount || inv.TotalAmount || inv.NetAmount || inv.grossAmount || inv.totalAmount || 0),
-        lineCount:   (inv.lines||[]).length,
-        status:      inv.Status || inv.PaymentStatus || inv.status || inv.paymentStatus || '',
+        customerId:   custId,
+        totalAmount:  invRevenue,
+        lineCount:    (inv.lines||[]).length,
+        status:       inv.Status || '',
       });
     }
 
@@ -492,10 +534,11 @@ const SP_CONFIG = {
   // Liste: intern URL-del er 'Leverandrer' men visningsnavnet er 'Leverandører'
   // Graph API bruker visningsnavnet eller intern ID
   listName:   process.env.SP_LIST_NAME   || 'Leverandører',
-  // Kolonne «Status» er av type Valg — internt navn er vanligvis 'Status'
-  statusColumn: process.env.SP_STATUS_COL || 'Status',
-  // «Leverandørnavn» er kolonnen med firmanavn (ikke «Tittel»)
-  nameColumn:   process.env.SP_NAME_COL   || 'Leverandørnavn',
+  // Exact internal column names from Power Automate debug log:
+  // Status column is 'Godkjent' (Choice, returns {Value:'Godkjent'})
+  statusColumn: process.env.SP_STATUS_COL || 'Godkjent',
+  // Name column is 'Leverand_x00f8_rnavn' (SharePoint XML encoding of 'Leverandørnavn')
+  nameColumn:   process.env.SP_NAME_COL   || 'Leverand_x00f8_rnavn',
   // «Organisasjonsnummer» er av type Tall
   orgNrColumn:  process.env.SP_ORGNR_COL  || 'Organisasjonsnummer',
   // Power Automate HTTP-trigger URL (enklest — lim inn her):
@@ -541,13 +584,14 @@ async function fetchSpList() {
     const data = await r.json();
     // Log first item to see actual field names from Power Automate
     const list = Array.isArray(data) ? data : (data?.value || data?.items || [data]);
-    if (list.length > 0) {
-      console.log('[SP] Første element fra Power Automate:');
-      console.log('[SP] Alle feltnavnene:', Object.keys(list[0]).join(', '));
-      console.log('[SP] Statusfelt (' + SP_CONFIG.statusColumn + '):', list[0][SP_CONFIG.statusColumn]);
-      console.log('[SP] Navnefelt (' + SP_CONFIG.nameColumn + '):', list[0][SP_CONFIG.nameColumn]);
-      console.log('[SP] Full første rad:', JSON.stringify(list[0]).slice(0, 500));
-    }
+    // Log confirmed field mapping
+    console.log(`[SP] ${list.length} rader mottatt. Feltbekreftelse:`);
+    list.slice(0, 3).forEach((x, i) => {
+      const name = x['Leverand_x00f8_rnavn'] || '?';
+      const godkjent = x['Godkjent'];
+      const status = godkjent && typeof godkjent === 'object' ? godkjent.Value : godkjent;
+      console.log(`[SP] Rad ${i+1}: navn="${name}", Godkjent="${status}"`);
+    });
     return list;
   }
 
@@ -600,36 +644,44 @@ app.get('/api/sharepoint/approved-suppliers', async (req, res) => {
       const f = item.fields || item; // Graph wraps in .fields, Power Automate may not
       // Try various field name formats (SharePoint encodes special chars)
       // Try every possible field name variant (Power Automate strips special chars)
+      // Extract raw value — SP sometimes wraps in objects
+      const extractStr = (val) => {
+        if (!val) return '';
+        if (typeof val === 'object') return val.Value || val.value || val.Label || '';
+        return String(val);
+      };
+      // SP_CONFIG.nameColumn = 'Leverand_x00f8_rnavn' (confirmed from PA debug)
       const name = (
-        f[SP_CONFIG.nameColumn] ||           // 'Leverandørnavn' exact
-        f['Leverandornavn'] ||               // without ø
-        f['Leverand_x00f8_rnavn'] ||         // SharePoint XML encoding
-        f['LeverandÃ¸rnavn'] ||              // UTF-8 mojibake
-        f.Title || ''
+        extractStr(f['Leverand_x00f8_rnavn']) ||  // confirmed exact field name
+        extractStr(f[SP_CONFIG.nameColumn]) ||     // config fallback
+        extractStr(f['Leverandornavn']) ||         // without special chars
+        extractStr(f.Title) || ''
       ).trim();
 
+      // Organisasjonsnummer not present in PA response — name matching only
       const orgNr = String(
         f[SP_CONFIG.orgNrColumn] ||
         f['Organisasjonsnummer'] ||
         f['OrgNr'] || ''
-      ).replace(/\s/g, ''); // remove spaces for comparison
+      ).replace(/\s/g, '');
 
-      // Status field — try multiple name variants
-      const status = (
-        f[SP_CONFIG.statusColumn] ||    // 'Status'
-        f['Status'] ||
-        f['status'] ||
-        null
-      );
+      // Status from 'Godkjent' column (Choice type) — returns {Value:'Godkjent'} object
+      // confirmed field name: 'Godkjent' from PA debug log
+      const rawStatus = f['Godkjent'] || f[SP_CONFIG.statusColumn] || null;
+      const status = rawStatus && typeof rawStatus === 'object'
+        ? (rawStatus.Value || rawStatus.value || null)
+        : (rawStatus || null);
       return {
         id:        item.id || f.id,
         name,
+        nameLower: name.toLowerCase().trim(),
         orgNr,
+        orgNrClean: orgNr.replace(/\s/g, ''),
         approved:  isApproved(status),
         status,
-        riskLevel: f.Risikoniv_x00e5_ || f.Risikonivå || null,
-        criticality: f.Kritikalitet || null,
-        department: f['Tilknyttet_x0020_avdeling'] || f['Tilknyttet avdeling'] || null,
+        riskLevel: extractStr(f.Risikoniv_x00e5_ || f.Risikoniv || f.Risikonivå || null),
+        criticality: extractStr(f.Kritikalitet || null),
+        department: extractStr(f['Tilknyttet_x0020_avdeling'] || f['Tilknyttet avdeling'] || null),
         raw:       f,
       };
     });
@@ -646,29 +698,72 @@ app.get('/api/sharepoint/config', (req, res) => {
   res.json({
     configured: isSpConfigured(),
     listName:   SP_CONFIG.listName,
-    statusColumn: SP_CONFIG.statusColumn,
-    nameColumn:   SP_CONFIG.nameColumn,
+    statusColumn: 'Godkjent',                    // locked — PA internal name
+    nameColumn:   'Leverand_x00f8_rnavn',        // locked — PA internal name
     orgNrColumn:  SP_CONFIG.orgNrColumn,
     hasPowerAutomateUrl: !!SP_CONFIG.powerAutomateUrl,
     hasTenantId:  !!SP_CONFIG.tenantId,
     hasClientId:  !!SP_CONFIG.clientId,
+    _note: 'Kolonnenavn er låst til bekreftet Power Automate interne navn',
   });
 });
 
 // POST /api/sharepoint/config — update config at runtime (saves to env-like object)
+// Path for persisting SP config
+const SP_CONFIG_FILE = process.env.SP_CONFIG_PATH || path.join(__dirname, 'sharepoint-config.json');
+
+function loadSpConfig() {
+  try {
+    if (fs.existsSync(SP_CONFIG_FILE)) {
+      const saved = JSON.parse(fs.readFileSync(SP_CONFIG_FILE, 'utf8'));
+      Object.assign(SP_CONFIG, saved);
+      // Always override with confirmed correct field names from PA debug
+      // Display name: "Status" — Internal PA name: "Godkjent"
+      SP_CONFIG.nameColumn   = 'Leverand_x00f8_rnavn';
+      SP_CONFIG.statusColumn = 'Godkjent';
+      console.log('[SP] Konfigurasjon lastet — PA feltnavnene bekreftet: Leverand_x00f8_rnavn / Godkjent');
+    }
+  } catch(e) { console.error('[SP] Kunne ikke laste konfigurasjon:', e.message); }
+}
+
+function saveSpConfig() {
+  try {
+    // Don't save clientSecret to disk for security — keep in memory only
+    const toSave = { ...SP_CONFIG, clientSecret: SP_CONFIG.clientSecret ? '***saved***' : '' };
+    fs.writeFileSync(SP_CONFIG_FILE, JSON.stringify({
+      tenantId: SP_CONFIG.tenantId,
+      clientId: SP_CONFIG.clientId,
+      siteId: SP_CONFIG.siteId,
+      listName: SP_CONFIG.listName,
+      statusColumn: SP_CONFIG.statusColumn,
+      nameColumn: SP_CONFIG.nameColumn,
+      orgNrColumn: SP_CONFIG.orgNrColumn,
+      powerAutomateUrl: SP_CONFIG.powerAutomateUrl,
+      // clientSecret excluded for security
+    }, null, 2), 'utf8');
+  } catch(e) { console.error('[SP] Kunne ikke lagre konfigurasjon:', e.message); }
+}
+
+// Load saved config on startup
+loadSpConfig();
+
 app.post('/api/sharepoint/config', (req, res) => {
   const { tenantId, clientId, clientSecret, siteId, listName, statusColumn, nameColumn, orgNrColumn, powerAutomateUrl } = req.body;
-  if (tenantId !== undefined)       SP_CONFIG.tenantId       = tenantId;
-  if (clientId !== undefined)       SP_CONFIG.clientId       = clientId;
-  if (clientSecret !== undefined)   SP_CONFIG.clientSecret   = clientSecret;
-  if (siteId !== undefined)         SP_CONFIG.siteId         = siteId;
-  if (listName !== undefined)       SP_CONFIG.listName       = listName;
-  if (statusColumn !== undefined)   SP_CONFIG.statusColumn   = statusColumn;
-  if (nameColumn !== undefined)     SP_CONFIG.nameColumn     = nameColumn;
-  if (orgNrColumn !== undefined)    SP_CONFIG.orgNrColumn    = orgNrColumn;
-  if (powerAutomateUrl !== undefined) SP_CONFIG.powerAutomateUrl = powerAutomateUrl;
-  spTokenCache = { token: null, expiry: 0 }; // reset token cache on config change
-  console.log('[SP] Konfigurasjon oppdatert');
+  if (tenantId !== undefined)         SP_CONFIG.tenantId           = tenantId;
+  if (clientId !== undefined)         SP_CONFIG.clientId           = clientId;
+  if (clientSecret !== undefined)     SP_CONFIG.clientSecret       = clientSecret;
+  if (siteId !== undefined)           SP_CONFIG.siteId             = siteId;
+  if (listName !== undefined)         SP_CONFIG.listName           = listName;
+  if (statusColumn !== undefined)     SP_CONFIG.statusColumn       = statusColumn;
+  if (nameColumn !== undefined)       SP_CONFIG.nameColumn         = nameColumn;
+  if (orgNrColumn !== undefined)      SP_CONFIG.orgNrColumn        = orgNrColumn;
+  if (powerAutomateUrl !== undefined) SP_CONFIG.powerAutomateUrl   = powerAutomateUrl;
+  // Always use confirmed PA internal field names — do not allow override
+  SP_CONFIG.nameColumn   = 'Leverand_x00f8_rnavn';
+  SP_CONFIG.statusColumn = 'Godkjent';
+  spTokenCache = { token: null, expiry: 0 };
+  saveSpConfig();
+  console.log('[SP] Konfigurasjon oppdatert — feltnavnene låst til: Leverand_x00f8_rnavn / Godkjent');
   res.json({ ok: true, configured: isSpConfigured() });
 });
 

@@ -11,9 +11,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_FILE   = path.join(__dirname, 'ambio-data.json');
-const BAK_FILE  = path.join(__dirname, 'ambio-data.backup.json');
-const TMP_FILE  = path.join(__dirname, 'ambio-data.tmp.json');
+// Use env var path if set (Fly.io persistent volume), else local
+const DATA_DIR  = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : __dirname;
+const DB_FILE   = process.env.DB_PATH  || path.join(__dirname, 'ambio-data.json');
+const BAK_FILE  = path.join(DATA_DIR, 'ambio-data.backup.json');
+const TMP_FILE  = path.join(DATA_DIR, 'ambio-data.tmp.json');
 
 let store = { orders: [], history: [], _version: 1 };
 let _nextHistId = 1;

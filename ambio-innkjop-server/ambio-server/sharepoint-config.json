@@ -1,0 +1,8 @@
+{
+  "powerAutomateUrl": "https://default5fb3629db89c4e9582510180152dd0.36.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/13d41f0a71c449afb3e407334082d048/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=_RSW_JG46JQWNSNaTiUTnJPuvIQricjkvMkivOFfGag",
+  "tenantId": "ambioas.onmicrosoft.com",
+  "clientId": "",
+  "siteId": "https://ambioas.sharepoint.com/sites/Ambiokvalitetssystem",
+  "listName": "Leverandører",
+  "orgNrColumn": "Organisasjonsnummer"
+}

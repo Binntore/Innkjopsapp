@@ -479,14 +479,20 @@ function AppProvider({children}){
         const map={};
         const fullData={};
         for(const s of d.suppliers){
+          // Index by exact name (lowercase)
           const k=s.name?.toLowerCase().trim();
           if(k){ map[k]=s.approved; fullData[k]=s; }
-          // OrgNr matching: strip spaces so '965 141 618' matches '965141618'
+          // Also index by name without special chars (handles ø→o etc)
+          const kSimple=k?.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9\s]/g,'').trim();
+          if(kSimple&&kSimple!==k){ map[kSimple]=s.approved; fullData[kSimple]=s; }
+          // OrgNr matching (strip spaces)
           if(s.orgNr){
-            const orgClean=s.orgNr.replace(/\s/g,'');
+            const orgClean=s.orgNr.replace(/[\s\s]/g,'');
             if(orgClean){ map[orgClean]=s.approved; fullData[orgClean]=s; }
           }
         }
+        console.log('[SP] Indekserte nøkler:', Object.keys(map).join(' | '));
+        console.log('[SP] Approved map:', JSON.stringify(map));
         setSpApproved(map);
         setSpData(fullData);
         setSpConfigured(true);
@@ -502,7 +508,28 @@ function AppProvider({children}){
 
   // Check SP config on startup
   useEffect(()=>{
-    fetch('/api/sharepoint/config').then(r=>r.json()).then(d=>setSpConfigured(d.configured)).catch(()=>{});
+    fetch('/api/sharepoint/config').then(r=>r.json()).then(d=>{
+      setSpConfigured(d.configured);
+      // If configured, auto-sync on startup
+      if(d.configured) {
+        // Small delay to let app finish initializing
+        setTimeout(()=>fetch('/api/sharepoint/approved-suppliers')
+          .then(r=>r.json())
+          .then(d2=>{
+            if(d2.ok){
+              const map={};const fullData={};
+              for(const s of d2.suppliers){
+                const k=s.name?.toLowerCase().trim();
+                if(k){map[k]=s.approved;fullData[k]=s;}
+                const ks=k?.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9\s]/g,'').trim();
+                if(ks&&ks!==k){map[ks]=s.approved;fullData[ks]=s;}
+                if(s.orgNr){const org=s.orgNr.replace(/[\s]/g,'');if(org){map[org]=s.approved;fullData[org]=s;}}
+              }
+              setSpApproved(map);setSpData(fullData);setSpConfigured(true);
+            }
+          }).catch(()=>{}), 1500);
+      }
+    }).catch(()=>{});
   },[]);
 
   return <Ctx.Provider value={{conn,connErr,products,suppliers,orders,history,notifs,loading,dbReady,notify,addHist,fetchProducts,fetchSuppliers,createOrder,submitForApproval,approveOrder,rejectOrder,sendOrder,receiveOrder,syncStock,setProducts,patchOrder,spApproved,spData,spConfigured,spLoading,syncSharePoint}}>{children}</Ctx.Provider>;
@@ -545,9 +572,11 @@ function NewOrderModal({onClose}){
     if(!sup) return notify('Velg leverandør','warning');
     // Check SharePoint approval
     if(spConfigured){
-      const key=sup.name?.toLowerCase().trim();
-      const orgKey=sup.organizationNumber?.replace(/\s/g,'')?.trim();
-      const sp=spApproved[key]??spApproved[orgKey]??undefined;
+      const supName=sup.name||sup.LegalName||'';
+      const key=supName.toLowerCase().trim();
+      const keyS=key.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,'').trim();
+      const orgKey=String(sup.organizationNumber||'').replace(/\s/g,'').trim();
+      const sp=spApproved[key]??spApproved[keyS]??spApproved[orgKey]??undefined;
       if(sp===false) return notify(`⚠ ${sup.name} er ikke godkjent i SharePoint-listen. Ordren kan ikke opprettes.`,'error');
     }
     if(!lines.length) return notify('Legg til minst én linje','warning');
@@ -986,10 +1015,12 @@ function Suppliers(){
           </div>
           {/* SharePoint godkjenningsinfo */}
           {spConfigured&&(()=>{
-            const key=detail.name?.toLowerCase().trim();
-            const orgKey=String(detail.organizationNumber||'').replace(/\s/g,'').trim();
-            const approved=spApproved[key]??spApproved[orgKey]??undefined;
-            const spRec=spData[key]||spData[orgKey]||null;
+            const name=detail.name||detail.LegalName||detail.Name||'';
+            const key=name.toLowerCase().trim();
+            const keySimple=key.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9\s]/g,'').trim();
+            const orgKey=String(detail.organizationNumber||detail.OrganizationNumber||'').replace(/\s/g,'').trim();
+            const approved=spApproved[key]??spApproved[keySimple]??spApproved[orgKey]??undefined;
+            const spRec=spData[key]||spData[keySimple]||spData[orgKey]||null;
             return <div style={{marginTop:10,padding:'12px 14px',borderRadius:'var(--rs)',
               background:approved===true?'var(--brl)':approved===false?'var(--dnl)':'var(--sur2)',
               border:`1px solid ${approved===true?'rgba(27,94,59,.2)':approved===false?'rgba(185,28,28,.2)':'var(--bdr)'}`}}>
@@ -1002,9 +1033,10 @@ function Suppliers(){
                 {spRec?.status&&<span class="bdg bgr tsm" style={{marginLeft:4}}>{spRec.status}</span>}
               </div>
               {spRec&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 16px',fontSize:12,color:'var(--txt2)'}}>
-                {spRec.riskLevel&&<div><span class="tm">Risikonivå:</span> {spRec.riskLevel}</div>}
-                {spRec.criticality&&<div><span class="tm">Kritikalitet:</span> {spRec.criticality}</div>}
-                {spRec.department&&<div><span class="tm">Avdeling:</span> {spRec.department}</div>}
+                {spRec.riskLevel&&<div><span class="tm">Risikonivå:</span> {String(spRec.riskLevel)}</div>}
+                {spRec.criticality&&<div><span class="tm">Kritikalitet:</span> {String(spRec.criticality)}</div>}
+                {spRec.department&&<div><span class="tm">Avdeling:</span> {String(spRec.department)}</div>}
+                {spRec.status&&<div><span class="tm">SP-status:</span> {String(spRec.status)}</div>}
               </div>}
             </div>;
           })()}
@@ -1372,7 +1404,7 @@ function Notifications(){
 /* ── SharePoint Settings ─────────────────────────────────────────────────── */
 function SpSettings(){
   const {spConfigured,spLoading,syncSharePoint,notify}=useApp();
-  const [cfg,setCfg]=useState({powerAutomateUrl:'',tenantId:'ambioas.onmicrosoft.com',clientId:'',clientSecret:'',siteId:'https://ambioas.sharepoint.com/sites/Ambiokvalitetssystem',listName:'Leverandører',statusColumn:'Status',nameColumn:'Leverandørnavn',orgNrColumn:'Organisasjonsnummer'});
+  const [cfg,setCfg]=useState({powerAutomateUrl:'',tenantId:'ambioas.onmicrosoft.com',clientId:'',clientSecret:'',siteId:'https://ambioas.sharepoint.com/sites/Ambiokvalitetssystem',listName:'Leverandører',statusColumn:'Godkjent',nameColumn:'Leverand_x00f8_rnavn',orgNrColumn:'Organisasjonsnummer'});
   const [mode,setMode]=useState('pa');
   const [saving,setSaving]=useState(false);
   const [showSecret,setShowSecret]=useState(false);
@@ -1415,9 +1447,13 @@ function SpSettings(){
     </>}
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:8}}>
       <div class="fg"><label class="fl">Listenavn i SharePoint</label><input class="fi" value={cfg.listName} onChange={e=>setCfg(c=>({...c,listName:e.target.value}))}/></div>
-      <div class="fg"><label class="fl">Godkjenningskolonne</label><input class="fi" value={cfg.statusColumn} onChange={e=>setCfg(c=>({...c,statusColumn:e.target.value}))}/></div>
-      <div class="fg"><label class="fl">Navnekolonne</label><input class="fi" value={cfg.nameColumn} onChange={e=>setCfg(c=>({...c,nameColumn:e.target.value}))}/></div>
       <div class="fg"><label class="fl">Org.nr-kolonne</label><input class="fi" value={cfg.orgNrColumn} onChange={e=>setCfg(c=>({...c,orgNrColumn:e.target.value}))}/></div>
+    </div>
+    <div style={{background:'var(--sur2)',borderRadius:'var(--rs)',padding:'9px 12px',fontSize:12,color:'var(--txt2)',marginTop:4}}>
+      <i class="ti ti-lock" style={{marginRight:5}}/><strong>Låste feltnavn</strong> (bekreftet fra Power Automate):
+      <div style={{marginTop:4,fontFamily:'var(--mono)',fontSize:11}}>
+        Navn: <strong>Leverand_x00f8_rnavn</strong> · Status: <strong>Godkjent</strong>
+      </div>
     </div>
     <div class="f g2" style={{marginTop:4}}>
       <button class="btn bp" onClick={save} disabled={saving||(!cfg.powerAutomateUrl&&!cfg.tenantId)}>{saving?<><i class="ti ti-loader spin"/> Lagrer…</>:<><i class="ti ti-plug"/> Lagre og test</>}</button>
@@ -1678,7 +1714,7 @@ function Statistics(){
           {data.byMonth?.length>0&&hasCharts&&<div class="card">
             <div class="card-hd"><span class="card-title">Omsetning over tid</span></div>
             <div style={{padding:'16px 8px'}}>
-              <SimpleAreaChart data={data.byMonth.map(m=>({label:m.label,current:m.revenue}))} valueKey="current" labelKey="label" height={220}/>
+              <SimpleAreaChart data={(data.byMonth||[]).filter(m=>m.label&&m.label!=='Ukjent').map(m=>({label:m.label,current:Number(m.revenue||0)}))} valueKey="current" labelKey="label" height={220}/>
             </div>
           </div>}
           {data.byProduct?.length>0&&<div class="card">
@@ -1698,11 +1734,11 @@ function Statistics(){
             : <div class="card">
               <div class="card-hd"><span class="card-title">{data.byProduct.length} produkter — omsetning per produkt</span></div>
               {hasCharts&&<div style={{padding:'16px 8px'}}>
-                <SimpleBarChart data={data.byProduct.slice(0,12).map(p=>({label:p.name.length>14?p.name.slice(0,12)+'…':p.name,revenue:p.revenue}))} valueKey="revenue" labelKey="label" height={280}/>
+                <SimpleBarChart data={(data.byProduct||[]).slice(0,12).map(p=>({label:p.name.length>14?p.name.slice(0,12)+'…':p.name,revenue:Number(p.revenue||0)}))} valueKey="revenue" labelKey="label" height={280}/>
               </div>}
               <table class="dt">
                 <thead><tr><th>#</th><th>Produkt</th><th>Kode</th><th style={{textAlign:'right'}}>Antall</th><th style={{textAlign:'right'}}>Omsetning</th><th style={{textAlign:'right'}}>Kunder</th><th style={{textAlign:'right'}}>Fakturaer</th>{showCmp&&cmpData&&<><th style={{textAlign:'right'}}>Forrige per.</th><th style={{textAlign:'right'}}>Endring</th></>}</tr></thead>
-                <tbody>{data.byProduct.map((p,i)=>{
+                <tbody>{(data.byProduct||[]).map((p,i)=>{
                   const cmpP = showCmp&&cmpData ? cmpData.byProduct.find(x=>x.name===p.name) : null;
                   return <tr key={i}>
                     <td class="txs tm">{i+1}</td>
@@ -1727,15 +1763,15 @@ function Statistics(){
             : <div class="card">
               <div class="card-hd"><span class="card-title">{data.byCustomer.length} kunder</span></div>
               {hasCharts&&<div style={{padding:'16px 8px'}}>
-                <SimpleBarChart data={data.byCustomer.slice(0,12).map(c=>({label:c.name.length>14?c.name.slice(0,12)+'…':c.name,revenue:c.revenue}))} valueKey="revenue" labelKey="label" height={260}/>
+                <SimpleBarChart data={(data.byCustomer||[]).slice(0,12).map(c=>({label:c.name.length>14?c.name.slice(0,12)+'…':c.name,revenue:Number(c.revenue||0)}))} valueKey="revenue" labelKey="label" height={260}/>
               </div>}
               <table class="dt">
                 <thead><tr><th>#</th><th>Kunde</th><th style={{textAlign:'right'}}>Fakturaer</th><th style={{textAlign:'right'}}>Enheter</th><th style={{textAlign:'right'}}>Omsetning</th><th style={{textAlign:'right'}}>Produkter</th><th style={{textAlign:'right'}}>Gj.snitt/faktura</th>{showCmp&&cmpData&&<><th style={{textAlign:'right'}}>Forrige per.</th><th style={{textAlign:'right'}}>Endring</th></>}</tr></thead>
-                <tbody>{data.byCustomer.map((c,i)=>{
+                <tbody>{(data.byCustomer||[]).map((c,i)=>{
                   const cmpC=showCmp&&cmpData?cmpData.byCustomer.find(x=>x.id===c.id):null;
                   return <tr key={i}>
                     <td class="txs tm">{i+1}</td>
-                    <td class="fw5">{c.name}</td>
+                    <td class="fw5">{c.name!=='ukjent'?c.name:`Kunde ID: ${c.id||c.name}`}</td>
                     <td style={{textAlign:'right'}} class="tsm">{c.invoiceCount}</td>
                     <td style={{textAlign:'right'}} class="fmo tsm">{c.qty.toLocaleString('nb-NO')}</td>
                     <td style={{textAlign:'right'}} class="fmo fsb">{krS(c.revenue)}</td>
@@ -1756,12 +1792,12 @@ function Statistics(){
             {hasCharts&&<div style={{padding:'16px 8px'}}>
               <>{showCmp&&cmpData
                 ? <SimpleGroupedChart data={(() => {const map={};data.byMonth.forEach(m=>{map[m.key]={label:m.label,current:m.revenue};});cmpData.byMonth.forEach(m=>{if(!map[m.key])map[m.key]={label:m.label,current:0};map[m.key].compare=m.revenue;});return Object.values(map).sort((a,b)=>(a.label||'').localeCompare(b.label||''));})()}  key1="current" key2="compare" labelKey="label" height={260}/>
-                : <SimpleBarChart data={data.byMonth.map(m=>({label:m.label,revenue:m.revenue}))} valueKey="revenue" labelKey="label" height={260}/>}
+                : <SimpleBarChart data={(data.byMonth||[]).filter(m=>m.label!=='Ukjent').map(m=>({label:m.label,revenue:Number(m.revenue||0)}))} valueKey="revenue" labelKey="label" height={260}/>}
               </>
             </div>}
             <table class="dt">
               <thead><tr><th>Måned</th><th style={{textAlign:'right'}}>Fakturaer</th><th style={{textAlign:'right'}}>Enheter</th><th style={{textAlign:'right'}}>Omsetning</th>{showCmp&&cmpData&&<><th style={{textAlign:'right'}}>Forrige per.</th><th style={{textAlign:'right'}}>Endring</th></>}</tr></thead>
-              <tbody>{data.byMonth.map((m,i)=>{
+              <tbody>{(data.byMonth||[]).map((m,i)=>{
                 const cmpM=showCmp&&cmpData?cmpData.byMonth.find(x=>x.key===m.key):null;
                 return <tr key={i}>
                   <td class="fw5">{m.label}</td>
@@ -1777,11 +1813,11 @@ function Statistics(){
           {data.byYear?.length>0&&<div class="card">
             <div class="card-hd"><span class="card-title">Per år</span></div>
             {hasCharts&&<div style={{padding:'16px 8px'}}>
-              <SimpleBarChart data={data.byYear.map(y=>({label:y.label,revenue:y.revenue}))} valueKey="revenue" labelKey="label" height={180}/>
+              <SimpleBarChart data={(data.byYear||[]).map(y=>({label:y.label,revenue:Number(y.revenue||0)}))} valueKey="revenue" labelKey="label" height={180}/>
             </div>}
             <table class="dt">
               <thead><tr><th>År</th><th style={{textAlign:'right'}}>Fakturaer</th><th style={{textAlign:'right'}}>Enheter</th><th style={{textAlign:'right'}}>Omsetning</th></tr></thead>
-              <tbody>{data.byYear.map((y,i)=><tr key={i}>
+              <tbody>{(data.byYear||[]).map((y,i)=><tr key={i}>
                 <td class="fw5">{y.label}</td>
                 <td style={{textAlign:'right'}} class="tsm">{y.invoiceCount}</td>
                 <td style={{textAlign:'right'}} class="fmo tsm">{y.qty.toLocaleString('nb-NO')}</td>
@@ -1800,7 +1836,7 @@ function Statistics(){
             ? <div class="empty-stats"><i class="ti ti-receipt-off"/><p>Ingen fakturaer funnet i perioden.</p></div>
             : <table class="dt">
               <thead><tr><th>Faktura nr.</th><th>Dato</th><th>Kunde</th><th style={{textAlign:'right'}}>Linjer</th><th style={{textAlign:'right'}}>Beløp</th><th>Status</th></tr></thead>
-              <tbody>{data.invoices.map((inv,i)=><tr key={i}>
+              <tbody>{(data.invoices||[]).map((inv,i)=><tr key={i}>
                 <td class="fmo fsb">{inv.invoiceNo}</td>
                 <td class="tsm tm">{fmtD(inv.date)}</td>
                 <td class="fw5">{inv.customerName}</td>
