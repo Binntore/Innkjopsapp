@@ -17,7 +17,12 @@ const DB_FILE   = process.env.DB_PATH  || path.join(__dirname, 'ambio-data.json'
 const BAK_FILE  = path.join(DATA_DIR, 'ambio-data.backup.json');
 const TMP_FILE  = path.join(DATA_DIR, 'ambio-data.tmp.json');
 
-let store = { orders: [], history: [], _version: 1 };
+let store = {
+  orders:  [],
+  history: [],
+  users:   [], // { email, displayName, role, addedAt, addedBy }
+  _version: 2,
+};
 let _nextHistId = 1;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -97,6 +102,39 @@ export function addHistory(type, text, user = 'System', ts = null) {
   if (store.history.length > 1000) store.history = store.history.slice(0, 1000);
   _save();
   return entry;
+}
+
+// ── Users / Roles ────────────────────────────────────────────────────────────
+export function getUsers() {
+  return store.users || [];
+}
+
+export function getUser(email) {
+  return (store.users || []).find(u => u.email?.toLowerCase() === email?.toLowerCase()) || null;
+}
+
+export function upsertUser(email, displayName, role, addedBy = 'System') {
+  const existing = getUser(email);
+  if (existing) {
+    existing.role = role;
+    existing.displayName = displayName || existing.displayName;
+    existing.updatedAt = new Date().toISOString();
+  } else {
+    store.users = [...(store.users || []), {
+      email: email.toLowerCase(),
+      displayName,
+      role,
+      addedAt: new Date().toISOString(),
+      addedBy,
+    }];
+  }
+  _save();
+  return getUser(email);
+}
+
+export function removeUser(email) {
+  store.users = (store.users || []).filter(u => u.email?.toLowerCase() !== email?.toLowerCase());
+  _save();
 }
 
 export function getDbStats() {

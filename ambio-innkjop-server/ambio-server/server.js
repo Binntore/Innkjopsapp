@@ -12,16 +12,57 @@ import fs from 'fs';
 import fetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
+import session from 'express-session';
 import {
   initDb, getAllOrders, getOrder, createOrder, updateOrderStatus,
   saveReceivedLines, savePogoManualSteps, getHistory, addHistory, getDbStats,
+  getUsers, getUser, upsertUser, removeUser,
 } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json());
 
-// ── Initialize database ───────────────────────────────────────────────────────
+// ── Session middleware ────────────────────────────────────────────────────────
+const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+    httpOnly: true,
+    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+  },
+}));
+
+// ── Azure AD / Microsoft 365 OAuth2 config ───────────────────────────────────
+const AZURE = {
+  tenantId:     process.env.AZURE_TENANT_ID     || 'ambioas.onmicrosoft.com',
+  clientId:     process.env.AZURE_CLIENT_ID     || '',  // Set in Fly.io secrets
+  clientSecret: process.env.AZURE_CLIENT_SECRET || '',  // Set in Fly.io secrets
+  redirectUri:  process.env.AZURE_REDIRECT_URI  || 'http://localhost:3000/auth/callback',
+  scopes: ['openid', 'profile', 'email', 'User.Read'],
+};
+
+// ── Auth middleware ──────────────────────────────────────────────────────────
+function requireAuth(req, res, next) {
+  if (req.session?.user) return next();
+  res.status(401).json({ error: 'Ikke innlogget', loginUrl: '/auth/login' });
+}
+
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.session?.user) return res.status(401).json({ error: 'Ikke innlogget', loginUrl: '/auth/login' });
+    if (!roles.includes(req.session.user.role)) {
+      return res.status(403).json({ error: `Krever rolle: ${roles.join(' eller ')}. Du har: ${req.session.user.role}` });
+    }
+    next();
+  };
+}
+
+// ── Initialize database ────────────────────────────────────────────────────── ───────────────────────────────────────────────────────
 initDb();
 
 // ── Config (Ambio AS demo credentials) ───────────────────────────────────────
@@ -75,7 +116,7 @@ async function getToken() {
 }
 
 // ── Database API: Orders ─────────────────────────────────────────────────────
-app.get('/api/orders', (req, res) => {
+app.get('/api/orders', requireAuth, (req, res) => {
   try { res.json(getAllOrders()); }
   catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -88,7 +129,7 @@ app.get('/api/orders/:id', (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', requireRole('bestiller','godkjenner','administrator'), (req, res) => {
   try {
     const order = createOrder(req.body);
     addHistory('po_created', `Innkjøpsordre opprettet — ${order.id} (${order.supplierName})`, req.body.user || 'Deg');
@@ -96,7 +137,7 @@ app.post('/api/orders', (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.patch('/api/orders/:id', (req, res) => {
+app.patch('/api/orders/:id', requireAuth, (req, res) => {
   try {
     const { historyEntry, receivedLines, pogoManualSteps, ...fields } = req.body;
     const order = updateOrderStatus(req.params.id, fields);
@@ -111,17 +152,140 @@ app.patch('/api/orders/:id', (req, res) => {
 });
 
 // ── Database API: History ─────────────────────────────────────────────────────
-app.get('/api/history', (req, res) => {
+app.get('/api/history', requireAuth, (req, res) => {
   try { res.json(getHistory(300)); }
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/history', (req, res) => {
+app.post('/api/history', requireAuth, (req, res) => {
   try {
     const { type, text, user, ts } = req.body;
     const entry = addHistory(type, text, user, ts);
     res.status(201).json(entry);
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Auth: Microsoft 365 / Azure AD ───────────────────────────────────────────
+
+// GET /auth/login — redirect to Microsoft login
+app.get('/auth/login', (req, res) => {
+  if (!isAzureConfigured()) {
+    // Dev mode: auto-login as admin when Azure not configured
+    req.session.user = { email: 'dev@ambio.no', displayName: 'Dev Admin', role: 'administrator', devMode: true };
+    return res.redirect('/');
+  }
+  const state = crypto.randomBytes(16).toString('hex');
+  req.session.oauthState = state;
+  const params = new URLSearchParams({
+    client_id:     AZURE.clientId,
+    response_type: 'code',
+    redirect_uri:  AZURE.redirectUri,
+    scope:         'openid profile email User.Read',
+    state,
+    response_mode: 'query',
+  });
+  res.redirect(`https://login.microsoftonline.com/${AZURE.tenantId}/oauth2/v2.0/authorize?${params}`);
+});
+
+// GET /auth/callback — handle Microsoft redirect
+app.get('/auth/callback', async (req, res) => {
+  const { code, state, error } = req.query;
+  if (error) return res.redirect(`/?auth_error=${encodeURIComponent(error)}`);
+  if (state !== req.session.oauthState) return res.redirect('/?auth_error=invalid_state');
+
+  try {
+    // Exchange code for tokens
+    const tokenRes = await fetch(`https://login.microsoftonline.com/${AZURE.tenantId}/oauth2/v2.0/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id:     AZURE.clientId,
+        client_secret: AZURE.clientSecret,
+        code,
+        redirect_uri:  AZURE.redirectUri,
+        grant_type:    'authorization_code',
+        scope:         'openid profile email User.Read',
+      }),
+    });
+    const tokens = await tokenRes.json();
+    if (!tokenRes.ok) throw new Error(tokens.error_description || 'Token exchange failed');
+
+    // Get user profile from Microsoft Graph
+    const graphRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
+    const profile = await graphRes.json();
+    const email = (profile.mail || profile.userPrincipalName || '').toLowerCase();
+    const displayName = profile.displayName || email;
+
+    // Look up role in our database
+    let dbUser = getUser(email);
+    if (!dbUser) {
+      // First user ever = administrator, others = no access until assigned
+      const users = getUsers();
+      const role = users.length === 0 ? 'administrator' : null;
+      if (role) {
+        dbUser = upsertUser(email, displayName, role, 'System (første bruker)');
+        addHistory('sync', `Første bruker opprettet som administrator: ${email}`, 'System');
+      }
+    } else {
+      // Update display name if changed
+      if (dbUser.displayName !== displayName) upsertUser(email, displayName, dbUser.role, dbUser.addedBy);
+    }
+
+    if (!dbUser?.role) {
+      // User authenticated but has no role assigned
+      req.session.user = null;
+      return res.redirect('/?auth_error=no_role&email=' + encodeURIComponent(email));
+    }
+
+    req.session.user = { email, displayName, role: dbUser.role, accessToken: tokens.access_token };
+    console.log(`[Auth] Innlogget: ${displayName} (${email}) — rolle: ${dbUser.role}`);
+    addHistory('sync', `${displayName} logget inn (${dbUser.role})`, displayName);
+    res.redirect('/');
+  } catch (err) {
+    console.error('[Auth] Callback feil:', err.message);
+    res.redirect('/?auth_error=' + encodeURIComponent(err.message));
+  }
+});
+
+// GET /auth/me — return current user info
+app.get('/auth/me', (req, res) => {
+  if (!req.session?.user) return res.status(401).json({ loggedIn: false, loginUrl: '/auth/login', azureConfigured: isAzureConfigured() });
+  const { accessToken, ...safeUser } = req.session.user;
+  res.json({ loggedIn: true, ...safeUser, azureConfigured: isAzureConfigured() });
+});
+
+// POST /auth/logout
+app.post('/auth/logout', (req, res) => {
+  const user = req.session.user;
+  req.session.destroy(() => {
+    if (user) addHistory('sync', `${user.displayName} logget ut`, user.displayName);
+    res.json({ ok: true });
+  });
+});
+
+// ── User management (admin only) ──────────────────────────────────────────────
+app.get('/api/users', requireRole('administrator'), (req, res) => {
+  res.json(getUsers());
+});
+
+app.post('/api/users', requireRole('administrator'), (req, res) => {
+  const { email, displayName, role } = req.body;
+  if (!email || !role) return res.status(400).json({ error: 'email og role påkrevd' });
+  if (!['administrator','godkjenner','bestiller'].includes(role))
+    return res.status(400).json({ error: 'Ugyldig rolle. Gyldige: administrator, godkjenner, bestiller' });
+  const user = upsertUser(email.toLowerCase(), displayName || email, role, req.session.user.email);
+  addHistory('sync', `Bruker ${email} tildelt rolle: ${role}`, req.session.user.displayName);
+  res.json(user);
+});
+
+app.delete('/api/users/:email', requireRole('administrator'), (req, res) => {
+  const email = decodeURIComponent(req.params.email);
+  if (email === req.session.user.email) return res.status(400).json({ error: 'Kan ikke fjerne deg selv' });
+  removeUser(email);
+  addHistory('sync', `Bruker ${email} fjernet`, req.session.user.displayName);
+  res.json({ ok: true });
 });
 
 // ── PowerOffice Go API proxy ──────────────────────────────────────────────────
@@ -161,7 +325,7 @@ app.all('/api/pogo/*', async (req, res) => {
 
 // ── Statistics: Fetch invoices + lines, aggregate server-side ────────────────
 // GET /api/stats/sales?from=YYYY-MM-DD&to=YYYY-MM-DD
-app.get('/api/stats/sales', async (req, res) => {
+app.get('/api/stats/sales', requireAuth, async (req, res) => {
   try {
     const token = await getToken();
     const { from, to } = req.query;
@@ -369,7 +533,7 @@ app.get('/api/stats/sales', async (req, res) => {
 //   3. Log clearly what happened so user knows state of POGO
 //   4. Return clear instructions for manual POGO update if auto-sync not possible
 //
-app.post('/api/stock/adjust', async (req, res) => {
+app.post('/api/stock/adjust', requireRole('godkjenner','administrator'), async (req, res) => {
   const { productId, delta, reason } = req.body;
   if (!productId || delta === undefined) {
     return res.status(400).json({ error: 'productId and delta required' });
@@ -475,7 +639,7 @@ app.post('/api/stock/adjust', async (req, res) => {
 
 // ── Stock: Fetch latest stock for one or all products from POGO ──────────────
 // GET /api/stock/sync?productId=123  (or omit for all)
-app.get('/api/stock/sync', async (req, res) => {
+app.get('/api/stock/sync', requireAuth, async (req, res) => {
   try {
     const token = await getToken();
     const hdrs = { Authorization: `Bearer ${token}`, 'Ocp-Apim-Subscription-Key': CONFIG.subscriptionKey, Accept: 'application/json' };
@@ -636,7 +800,7 @@ async function fetchSpList() {
   return data.value || [];
 }
 
-app.get('/api/sharepoint/approved-suppliers', async (req, res) => {
+app.get('/api/sharepoint/approved-suppliers', requireAuth, async (req, res) => {
   try {
     const items = await fetchSpList();
     // Normalize to consistent shape regardless of column names

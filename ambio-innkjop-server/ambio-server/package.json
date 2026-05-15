@@ -1,7 +1,7 @@
 {
   "name": "ambio-innkjop-server",
   "version": "1.0.0",
-  "description": "Ambio Innkjøp og varer — Express proxy server for PowerOffice Go",
+  "description": "Ambio Innkjøp og varer — Express server med Microsoft 365-innlogging",
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "express": "^4.19.2",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "express-session": "^1.18.0",
+    "crypto": "^1.0.1"
   }
 }

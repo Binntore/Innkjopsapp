@@ -151,6 +151,33 @@ body{font-family:var(--font);background:var(--bg);color:var(--txt);font-size:14p
 .cmp-label{font-size:11px;color:var(--txt3);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
 .cmp-val{font-size:22px;font-weight:600;letter-spacing:-.5px}
 .cmp-diff{font-size:12px;margin-top:4px;display:flex;align-items:center;gap:5px}
+
+/* ── Auth / Login ────────────────────────────────────────────────────────── */
+.login-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);flex-direction:column;gap:0}
+.login-card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:40px 48px;width:400px;max-width:calc(100vw - 32px);box-shadow:var(--shmd);text-align:center}
+.login-logo{font-size:40px;color:var(--br);margin-bottom:16px}
+.login-title{font-size:22px;font-weight:700;color:var(--txt);margin-bottom:4px}
+.login-sub{font-size:14px;color:var(--txt2);margin-bottom:32px}
+.ms-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px 20px;border-radius:var(--rs);border:1px solid var(--bdrm);background:var(--sur);color:var(--txt);font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;transition:background .15s;text-decoration:none}
+.ms-btn:hover{background:var(--sur2)}
+.ms-btn svg{flex-shrink:0}
+.login-note{font-size:12px;color:var(--txt3);margin-top:20px}
+.login-error{background:var(--dnl);color:var(--dn);border:1px solid rgba(185,28,28,.2);border-radius:var(--rs);padding:10px 14px;font-size:13px;margin-bottom:20px}
+.user-pill{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;background:var(--sur2);border:1px solid var(--bdr);cursor:pointer;font-size:13px;position:relative}
+.user-pill:hover{background:var(--brl)}
+.user-menu{position:absolute;top:calc(100% + 6px);right:0;background:var(--sur);border:1px solid var(--bdrm);border-radius:var(--r);box-shadow:var(--shmd);min-width:220px;z-index:50;overflow:hidden}
+.user-menu-item{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:var(--txt);cursor:pointer;transition:background .12s;border:none;background:none;width:100%;text-align:left;font-family:var(--font)}
+.user-menu-item:hover{background:var(--sur2)}
+.user-menu-item.danger{color:var(--dn)}
+.role-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:.04em}
+.role-administrator{background:#EDE9FE;color:#5B21B6}
+.role-godkjenner{background:var(--brl);color:var(--br)}
+.role-bestiller{background:var(--inl);color:var(--in)}
+.user-header{padding:12px 14px;border-bottom:1px solid var(--bdr)}
+.user-header .name{font-weight:600;font-size:13px}
+.user-header .email{font-size:11px;color:var(--txt3);margin-top:1px}
+.no-access{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);flex-direction:column;gap:12px;color:var(--txt2)}
+.no-access .ti{font-size:48px;color:var(--txt3)}
 </style>
 </head>
 <body>
@@ -225,6 +252,8 @@ function AppProvider({children}){
   const [notifs,setNotifs]=useState([]);
   const [loading,setLoading]=useState({});
   const [dbReady,setDbReady]=useState(false);
+  const [authUser,setAuthUser]=useState(null);   // null=loading, false=not logged in, {...}=user
+  const [authLoading,setAuthLoading]=useState(true);
   const [spApproved,setSpApproved]=useState({}); // {supplierName: true/false/null}
   const [spData,setSpData]=useState({}); // full SP record per supplier
   const [spConfigured,setSpConfigured]=useState(false);
@@ -466,7 +495,14 @@ function AppProvider({children}){
     }catch(e){ notify(`Lagersynk feilet: ${e.message}`,'error'); }
   },[]);
 
-  useEffect(()=>{connect();},[]);
+  // Check auth on startup
+  useEffect(()=>{
+    fetch('/auth/me').then(r=>r.json()).then(d=>{
+      if(d.loggedIn){ setAuthUser(d); connect(); }
+      else { setAuthUser(false); }
+      setAuthLoading(false);
+    }).catch(()=>{ setAuthUser(false); setAuthLoading(false); });
+  },[]);
 
   // Fetch SharePoint approved suppliers list
   const syncSharePoint=useCallback(async()=>{
@@ -532,7 +568,13 @@ function AppProvider({children}){
     }).catch(()=>{});
   },[]);
 
-  return <Ctx.Provider value={{conn,connErr,products,suppliers,orders,history,notifs,loading,dbReady,notify,addHist,fetchProducts,fetchSuppliers,createOrder,submitForApproval,approveOrder,rejectOrder,sendOrder,receiveOrder,syncStock,setProducts,patchOrder,spApproved,spData,spConfigured,spLoading,syncSharePoint}}>{children}</Ctx.Provider>;
+  const logout=useCallback(async()=>{
+    await fetch('/auth/logout',{method:'POST'});
+    setAuthUser(false);
+    setOrders([]); setHistory([]);
+  },[]);
+
+  return <Ctx.Provider value={{conn,connErr,authUser,authLoading,logout,products,suppliers,orders,history,notifs,loading,dbReady,notify,addHist,fetchProducts,fetchSuppliers,createOrder,submitForApproval,approveOrder,rejectOrder,sendOrder,receiveOrder,syncStock,setProducts,patchOrder,spApproved,spData,spConfigured,spLoading,syncSharePoint}}>{children}</Ctx.Provider>;
 }
 const useApp=()=>useContext(Ctx);
 
@@ -1401,6 +1443,168 @@ function Notifications(){
 }
 
 
+
+/* ── Login Screen ────────────────────────────────────────────────────────── */
+function LoginScreen({error}){
+  const params = new URLSearchParams(window.location.search);
+  const authError = params.get('auth_error');
+  const noRole   = authError==='no_role';
+  const email    = params.get('email');
+
+  return <div class="login-screen">
+    <div class="login-card">
+      <div class="login-logo"><i class="ti ti-building-warehouse"/></div>
+      <div class="login-title">Ambio Innkjøp og varer</div>
+      <div class="login-sub">Logg inn med din Ambio Microsoft 365-konto</div>
+
+      {noRole&&<div class="login-error">
+        <i class="ti ti-lock"/> Din konto ({email}) har ikke tilgang ennå.<br/>
+        <span class="txs">Be en administrator om å tildele deg en rolle.</span>
+      </div>}
+      {authError&&!noRole&&<div class="login-error">
+        <i class="ti ti-alert-circle"/> Innloggingsfeil: {authError}
+      </div>}
+
+      <a href="/auth/login" class="ms-btn">
+        <svg width="20" height="20" viewBox="0 0 21 21" fill="none">
+          <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+          <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+          <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+          <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+        </svg>
+        Logg inn med Microsoft 365
+      </a>
+      <div class="login-note">Kun Ambio-ansatte med tildelt rolle har tilgang</div>
+    </div>
+  </div>;
+}
+
+/* ── User Menu ────────────────────────────────────────────────────────────── */
+function UserMenu(){
+  const {authUser,logout}=useApp();
+  const [open,setOpen]=useState(false);
+  const ref=React.useRef();
+
+  useEffect(()=>{
+    const close=(e)=>{ if(ref.current&&!ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown',close);
+    return ()=>document.removeEventListener('mousedown',close);
+  },[]);
+
+  if(!authUser) return null;
+  const roleLabel={administrator:'Administrator',godkjenner:'Godkjenner',bestiller:'Bestiller'};
+
+  return <div style={{position:'relative'}} ref={ref}>
+    <button class="user-pill" onClick={()=>setOpen(v=>!v)}>
+      <i class="ti ti-user-circle" style={{fontSize:18,color:'var(--br)'}}/>
+      <span class="fw5">{authUser.displayName?.split(' ')[0]}</span>
+      <span class={`role-badge role-${authUser.role}`}>{roleLabel[authUser.role]||authUser.role}</span>
+      <i class={`ti ti-chevron-${open?'up':'down'}`} style={{fontSize:12,color:'var(--txt3)'}}/>
+    </button>
+    {open&&<div class="user-menu">
+      <div class="user-header">
+        <div class="name">{authUser.displayName}</div>
+        <div class="email">{authUser.email}</div>
+        <div style={{marginTop:5}}><span class={`role-badge role-${authUser.role}`}>{roleLabel[authUser.role]}</span></div>
+      </div>
+      <button class="user-menu-item danger" onClick={()=>{setOpen(false);logout();}}>
+        <i class="ti ti-logout"/> Logg ut
+      </button>
+    </div>}
+  </div>;
+}
+
+/* ── Admin: User Management ──────────────────────────────────────────────── */
+function AdminUsers(){
+  const {authUser,notify}=useApp();
+  const [users,setUsers]=useState([]);
+  const [newEmail,setNewEmail]=useState('');
+  const [newName,setNewName]=useState('');
+  const [newRole,setNewRole]=useState('bestiller');
+  const [adding,setAdding]=useState(false);
+
+  const load=()=>fetch('/api/users').then(r=>r.json()).then(setUsers).catch(()=>{});
+  useEffect(()=>{load();},[]);
+
+  const addUser=async()=>{
+    if(!newEmail) return;
+    setAdding(true);
+    try{
+      const r=await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email:newEmail,displayName:newName,role:newRole})});
+      const d=await r.json();
+      if(r.ok){ notify(`${newEmail} lagt til som ${newRole}`,'success'); setNewEmail('');setNewName(''); load(); }
+      else notify(d.error,'error');
+    }finally{setAdding(false);}
+  };
+
+  const removeUser=async(email)=>{
+    if(!confirm(`Fjerne tilgang for ${email}?`)) return;
+    await fetch(`/api/users/${encodeURIComponent(email)}`,{method:'DELETE'});
+    notify(`${email} fjernet`,'success'); load();
+  };
+
+  const changeRole=async(email,displayName,role)=>{
+    await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,displayName,role})});
+    notify(`${email} er nå ${role}`,'success'); load();
+  };
+
+  const roleLabel={administrator:'Administrator',godkjenner:'Godkjenner',bestiller:'Bestiller'};
+
+  return <>
+    <div class="ph"><span class="ph-title">Brukere og roller</span></div>
+    <div class="pb" style={{maxWidth:700}}>
+      <div class="ss">
+        <div class="st">Legg til bruker</div>
+        <div class="sd">Brukeren må logge inn med sin Microsoft 365-konto. Rollen gir følgende tilgang:<br/>
+          <strong>Bestiller</strong> — opprette og sende innkjøpsordrer<br/>
+          <strong>Godkjenner</strong> — godkjenne/avvise ordrer + motta varer<br/>
+          <strong>Administrator</strong> — full tilgang + administrere brukere
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 140px auto',gap:8,alignItems:'end'}}>
+          <div class="fg" style={{margin:0}}><label class="fl">E-postadresse (Microsoft 365)</label>
+            <input class="fi" value={newEmail} onChange={e=>setNewEmail(e.target.value)} placeholder="navn@ambio.no"/></div>
+          <div class="fg" style={{margin:0}}><label class="fl">Visningsnavn (valgfritt)</label>
+            <input class="fi" value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Fornavn Etternavn"/></div>
+          <div class="fg" style={{margin:0}}><label class="fl">Rolle</label>
+            <select class="fi fsel" value={newRole} onChange={e=>setNewRole(e.target.value)}>
+              <option value="bestiller">Bestiller</option>
+              <option value="godkjenner">Godkjenner</option>
+              <option value="administrator">Administrator</option>
+            </select></div>
+          <button class="btn bp" onClick={addUser} disabled={adding||!newEmail} style={{alignSelf:'flex-end'}}>
+            {adding?<><i class="ti ti-loader spin"/>…</>:<><i class="ti ti-plus"/> Legg til</>}
+          </button>
+        </div>
+      </div>
+
+      <div class="ss">
+        <div class="st">Alle brukere ({users.length})</div>
+        {users.length===0?<div class="sd">Ingen brukere registrert ennå.</div>
+        :<div class="card"><table class="dt">
+          <thead><tr><th>E-post</th><th>Navn</th><th>Rolle</th><th>Lagt til</th><th></th></tr></thead>
+          <tbody>{users.map(u=><tr key={u.email}>
+            <td class="fmo tsm">{u.email}</td>
+            <td class="fw5">{u.displayName||'—'}</td>
+            <td>
+              <select class="fi fsel" style={{padding:'4px 8px',fontSize:12,width:'auto'}}
+                value={u.role} onChange={e=>changeRole(u.email,u.displayName,e.target.value)}
+                disabled={u.email===authUser?.email}>
+                <option value="bestiller">Bestiller</option>
+                <option value="godkjenner">Godkjenner</option>
+                <option value="administrator">Administrator</option>
+              </select>
+            </td>
+            <td class="tsm tm">{u.addedAt?new Date(u.addedAt).toLocaleDateString('nb-NO'):''}</td>
+            <td>{u.email!==authUser?.email&&<button class="btn bsm bd bic" title="Fjern tilgang" onClick={()=>removeUser(u.email)}><i class="ti ti-trash" style={{fontSize:13}}/></button>}</td>
+          </tr>)}</tbody>
+        </table></div>}
+      </div>
+    </div>
+  </>;
+}
+
 /* ── SharePoint Settings ─────────────────────────────────────────────────── */
 function SpSettings(){
   const {spConfigured,spLoading,syncSharePoint,notify}=useApp();
@@ -1500,9 +1704,10 @@ const PAGES=[
   {id:'suppliers',label:'Leverandører',icon:'ti-building-store'},
   {id:'orders',label:'Innkjøpsordrer',icon:'ti-file-invoice',sec:'Innkjøp'},
   {id:'history',label:'Aktivitetslogg',icon:'ti-history'},
-  {id:'settings',label:'Innstillinger',icon:'ti-settings',sec:'Konfigurasjon'},
+  {id:'users',label:'Brukere',icon:'ti-users',sec:'Administrasjon',adminOnly:true},
+  {id:'settings',label:'Innstillinger',icon:'ti-settings',adminOnly:true},
 ];
-const COMPS={products:Products,suppliers:Suppliers,orders:Orders,history:History,statistics:Statistics,settings:Settings};
+const COMPS={products:Products,suppliers:Suppliers,orders:Orders,history:History,statistics:Statistics,users:AdminUsers,settings:Settings};
 
 
 /* Statistics Page */
@@ -1852,13 +2057,18 @@ function Statistics(){
 }
 
 function Shell(){
-  const {conn,connErr,orders,dbReady}=useApp();
+  const {conn,connErr,orders,dbReady,authUser,authLoading,logout}=useApp();
   const [page,setPage]=useState('products');
   const [col,setCol]=useState(false);
   const Active=COMPS[page]||Products;
+  if(authLoading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12,color:'var(--txt3)',fontFamily:'var(--font)'}}>
+    <i class="ti ti-loader spin" style={{fontSize:36}}/>
+    <div style={{fontSize:14}}>Sjekker innlogging…</div>
+  </div>;
+  if(!authUser) return <LoginScreen/>;
   if(!dbReady) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12,color:'var(--txt3)',fontFamily:'var(--font)'}}>
     <i class="ti ti-database" style={{fontSize:36}}/>
-    <div style={{fontSize:14}}>Laster data fra database…</div>
+    <div style={{fontSize:14}}>Laster data…</div>
   </div>;
   return <div class="app">
     <aside class={`sb ${col?'c':''}`}>
@@ -1871,8 +2081,8 @@ function Shell(){
         {!col&&<span>{conn==='ok'?'PowerOffice Go tilkoblet':conn==='error'?'Tilkoblingsfeil':'Kobler til…'}</span>}
       </div>
       <nav class="sb-nav">
-        {PAGES.map((p,i)=>{
-          const prev=PAGES[i-1];
+        {PAGES.filter(p=>!p.adminOnly||authUser?.role==='administrator').map((p,i,arr)=>{
+          const prev=arr[i-1];
           return <div key={p.id}>
             {p.sec&&p.sec!==prev?.sec&&!col&&<div class="nav-sec">{p.sec}</div>}
             <button class={`nav-btn ${page===p.id?'act':''}`} onClick={()=>setPage(p.id)} title={col?p.label:undefined}>
@@ -1887,7 +2097,14 @@ function Shell(){
         <i class="ti ti-alert-triangle"/> {connErr}
       </div>}
     </aside>
-    <main class="main"><Active/></main>
+    <main class="main">
+      {/* Topbar with user menu */}
+      <div style={{position:'sticky',top:0,zIndex:11,background:'var(--sur)',borderBottom:'1px solid var(--bdr)',padding:'8px 20px',display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8}}>
+        {authUser?.devMode&&<span class="bdg bwn txs"><i class="ti ti-code"/> Dev-modus</span>}
+        <UserMenu/>
+      </div>
+      <Active/>
+    </main>
     <Notifications/>
   </div>;
 }
