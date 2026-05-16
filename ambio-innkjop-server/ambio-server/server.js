@@ -23,6 +23,7 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.set('trust proxy', 1); // Required for secure cookies behind Fly.io proxy
 app.use(express.json());
 
 // ── Session middleware ────────────────────────────────────────────────────────
@@ -32,9 +33,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+    secure: 'auto',  // auto-detect via trust proxy
     httpOnly: true,
-    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    maxAge: 8 * 60 * 60 * 1000,
+    sameSite: 'lax',
   },
 }));
 
