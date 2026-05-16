@@ -1,13 +1,13 @@
 # Midlertidig testkonfigurasjon — Microsoft-innlogging deaktivert
-# Bruk: fly deploy --config fly-test.toml
-# NB: Bytt tilbake til fly.toml før produksjon!
 app = "ambio-innkjop"
 primary_region = "ams"
+
+[build]
 
 [env]
   NODE_ENV = "production"
   PORT = "3000"
-  AUTH_BYPASS = "true"   # ← DEAKTIVERER Microsoft-innlogging
+  AUTH_BYPASS = "true"
 
 [http_service]
   internal_port = 3000

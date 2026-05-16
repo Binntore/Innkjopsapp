@@ -173,8 +173,14 @@ app.post('/api/history', requireAuth, (req, res) => {
 // GET /auth/login — redirect to Microsoft login
 app.get('/auth/login', (req, res) => {
   // MIDLERTIDIG: Microsoft-innlogging deaktivert — direkte testinnlogging
-  if (process.env.AUTH_BYPASS === 'true' || !isAzureConfigured()) {
+  // AUTH_BYPASS kan settes via fly secrets set AUTH_BYPASS=true eller i fly-test.toml [env]
+  const bypass = process.env.AUTH_BYPASS === 'true'
+    || process.env.AUTH_BYPASS === '1'
+    || !isAzureConfigured();
+  console.log(`[Auth] Login attempt — bypass=${bypass}, AUTH_BYPASS=${process.env.AUTH_BYPASS}, azureConfigured=${isAzureConfigured()}`);
+  if (bypass) {
     req.session.user = { email: 'dev@ambio.no', displayName: 'Dev Admin (test)', role: 'administrator', devMode: true };
+    console.log('[Auth] Bypass aktiv — logger inn som Dev Admin');
     return res.redirect('/');
   }
   const state = crypto.randomBytes(16).toString('hex');
