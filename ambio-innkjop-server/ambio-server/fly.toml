@@ -1,9 +1,5 @@
-# Fly.io konfigurasjon for Ambio Innkjøp og varer
 app = "ambio-innkjop"
-primary_region = "ams"  # Amsterdam — nærmest Norge
-
-[build]
-  # Fly oppdager Node.js automatisk via package.json
+primary_region = "ams"
 
 [env]
   NODE_ENV = "production"
@@ -12,18 +8,17 @@ primary_region = "ams"  # Amsterdam — nærmest Norge
 [http_service]
   internal_port = 3000
   force_https = true
-  auto_stop_machines = false   # IKKE sov — alltid på
+  auto_stop_machines = false
   auto_start_machines = true
   min_machines_running = 1
 
-[[mounts]]
-  source = "ambio_data"        # Persistent disk — overlever redeploy
-  destination = "/data"        # Data lagres hit i skyen
-
-[checks]
-  [checks.alive]
+  [[http_service.checks]]
     grace_period = "10s"
     interval = "30s"
     method = "GET"
     path = "/api/status"
     timeout = "5s"
+
+[[mounts]]
+  source = "ambio_data"
+  destination = "/data"

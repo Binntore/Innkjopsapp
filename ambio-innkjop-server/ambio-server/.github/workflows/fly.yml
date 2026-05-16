@@ -3,17 +3,15 @@ name: Deploy til Fly.io
 on:
   push:
     branches: [main]
+  workflow_dispatch:   # ← Legger til manuell "Run workflow"-knapp i GitHub
 
 jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: superfly/flyctl-actions/setup-flyctl@master
-
       - name: Deploy til Fly.io
         run: flyctl deploy --remote-only
         env:
