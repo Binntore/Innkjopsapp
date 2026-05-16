@@ -18,6 +18,7 @@ import {
   initDb, getAllOrders, getOrder, createOrder, updateOrderStatus,
   saveReceivedLines, savePogoManualSteps, getHistory, addHistory, getDbStats,
   getUsers, getUser, upsertUser, removeUser,
+  getAllStocktakes, getStocktake, createStocktake, updateStocktake,
 } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -171,9 +172,9 @@ app.post('/api/history', requireAuth, (req, res) => {
 
 // GET /auth/login — redirect to Microsoft login
 app.get('/auth/login', (req, res) => {
-  if (!isAzureConfigured()) {
-    // Dev mode: auto-login as admin when Azure not configured
-    req.session.user = { email: 'dev@ambio.no', displayName: 'Dev Admin', role: 'administrator', devMode: true };
+  // MIDLERTIDIG: Microsoft-innlogging deaktivert — direkte testinnlogging
+  if (process.env.AUTH_BYPASS === 'true' || !isAzureConfigured()) {
+    req.session.user = { email: 'dev@ambio.no', displayName: 'Dev Admin (test)', role: 'administrator', devMode: true };
     return res.redirect('/');
   }
   const state = crypto.randomBytes(16).toString('hex');
@@ -288,6 +289,32 @@ app.delete('/api/users/:email', requireRole('administrator'), (req, res) => {
   removeUser(email);
   addHistory('sync', `Bruker ${email} fjernet`, req.session.user.displayName);
   res.json({ ok: true });
+});
+
+// ── Lagertelling (Stocktake) ─────────────────────────────────────────────────
+
+app.get('/api/stocktakes', requireAuth, (req, res) => {
+  res.json(getAllStocktakes());
+});
+
+app.post('/api/stocktakes', requireAuth, (req, res) => {
+  const st = createStocktake(req.body);
+  addHistory('stock_update', `Lagertelling opprettet: ${st.id}`, req.session?.user?.displayName || 'System');
+  res.status(201).json(st);
+});
+
+app.get('/api/stocktakes/:id', requireAuth, (req, res) => {
+  const st = getStocktake(req.params.id);
+  if (!st) return res.status(404).json({ error: 'Ikke funnet' });
+  res.json(st);
+});
+
+app.patch('/api/stocktakes/:id', requireAuth, (req, res) => {
+  const { historyNote, ...fields } = req.body;
+  const st = updateStocktake(req.params.id, fields);
+  if (!st) return res.status(404).json({ error: 'Ikke funnet' });
+  if (historyNote) addHistory('stock_update', historyNote, req.session?.user?.displayName || 'System');
+  res.json(st);
 });
 
 // ── PowerOffice Go API proxy ──────────────────────────────────────────────────

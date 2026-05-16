@@ -18,10 +18,11 @@ const BAK_FILE  = path.join(DATA_DIR, 'ambio-data.backup.json');
 const TMP_FILE  = path.join(DATA_DIR, 'ambio-data.tmp.json');
 
 let store = {
-  orders:  [],
-  history: [],
-  users:   [], // { email, displayName, role, addedAt, addedBy }
-  _version: 2,
+  orders:     [],
+  history:    [],
+  users:      [],
+  stocktakes: [], // { id, name, status, createdAt, finalizedAt, lines, report }
+  _version:   3,
 };
 let _nextHistId = 1;
 
@@ -135,6 +136,37 @@ export function upsertUser(email, displayName, role, addedBy = 'System') {
 export function removeUser(email) {
   store.users = (store.users || []).filter(u => u.email?.toLowerCase() !== email?.toLowerCase());
   _save();
+}
+
+// ── Stocktakes ───────────────────────────────────────────────────────────────
+export function getAllStocktakes() {
+  return (store.stocktakes || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export function getStocktake(id) {
+  return (store.stocktakes || []).find(s => s.id === id) || null;
+}
+
+export function createStocktake(data) {
+  const st = {
+    ...data,
+    id: `TELLING-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
+    status: 'open',
+    createdAt: new Date().toISOString(),
+    finalizedAt: null,
+    report: null,
+  };
+  store.stocktakes = [st, ...(store.stocktakes || [])];
+  _save();
+  return st;
+}
+
+export function updateStocktake(id, fields) {
+  const idx = (store.stocktakes || []).findIndex(s => s.id === id);
+  if (idx === -1) return null;
+  store.stocktakes[idx] = { ...store.stocktakes[idx], ...fields, updatedAt: new Date().toISOString() };
+  _save();
+  return store.stocktakes[idx];
 }
 
 export function getDbStats() {

@@ -2,7 +2,10 @@
 <html lang="nb">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#1B5E3B"/>
+<meta name="description" content="Innkjøpssystem for Ambio AS"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>Ambio Innkjøp og varer</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css"/>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -178,6 +181,37 @@ body{font-family:var(--font);background:var(--bg);color:var(--txt);font-size:14p
 .user-header .email{font-size:11px;color:var(--txt3);margin-top:1px}
 .no-access{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);flex-direction:column;gap:12px;color:var(--txt2)}
 .no-access .ti{font-size:48px;color:var(--txt3)}
+
+/* Skip link for keyboard users */
+.skip-link{position:absolute;top:-100px;left:8px;z-index:9999;padding:8px 16px;background:var(--br);color:#fff;border-radius:var(--rs);font-size:14px;font-weight:600;text-decoration:none;transition:top .2s}
+.skip-link:focus{top:8px}
+/* GDPR banner */
+.gdpr-banner{position:fixed;bottom:0;left:0;right:0;background:var(--sur);border-top:1px solid var(--bdrm);padding:14px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;z-index:200;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+.gdpr-banner p{font-size:13px;color:var(--txt2);flex:1;min-width:200px;line-height:1.5}
+.gdpr-banner .gdpr-btns{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+/* Improved form accessibility */
+.fi:invalid{border-color:var(--dn)}
+.fi[aria-invalid="true"]{border-color:var(--dn);box-shadow:0 0 0 3px rgba(185,28,28,.15)}
+.field-error{font-size:11px;color:var(--dn);margin-top:3px;display:flex;align-items:center;gap:4px}
+/* Better mobile table scrolling */
+@media(max-width:768px){
+  .card{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .dt{min-width:500px}
+  .pb{padding:12px}
+  .ph{padding:12px 16px}
+  .ph-title{font-size:18px}
+  .mod{width:calc(100vw - 16px)!important;margin:8px;max-height:95vh!important}
+  .mod-bd{padding:12px}
+  .mod-hd{padding:14px}
+  .mg{grid-template-columns:repeat(2,1fr)!important}
+  .login-card{padding:28px 24px}
+  .ss{padding:16px}
+}
+@media(max-width:480px){
+  .mg{grid-template-columns:1fr!important}
+  .ph-acts{gap:6px}
+  .ph-acts .btn{font-size:12px;padding:6px 10px}
+}
 </style>
 </head>
 <body>
@@ -584,16 +618,34 @@ function printPDF(order){
   const total=lines.reduce((s,l)=>s+(Number(l.qty)*Number(l.unitPrice)),0);
   const vat=total*0.25;
   const lineRows=lines.map(l=>`<tr><td>${l.productCode||''}</td><td>${l.productName}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${l.unit||'stk'}</td><td style="text-align:right">kr ${Number(l.unitPrice).toLocaleString('nb-NO',{minimumFractionDigits:2})}</td><td style="text-align:right"><strong>kr ${Number(l.qty*l.unitPrice).toLocaleString('nb-NO',{minimumFractionDigits:2})}</strong></td></tr>`).join('');
-  const html=`<!DOCTYPE html><html lang="nb"><head><meta charset="UTF-8"/><title>Innkjøpsordre ${order.id}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:0}.page{max-width:794px;margin:0 auto;padding:40px 48px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:18px;border-bottom:2.5px solid #1B5E3B}.co{font-size:20px;font-weight:700;color:#1B5E3B}.co-sub{font-size:11px;color:#666;margin-top:2px}.po-title{font-size:22px;font-weight:700;color:#1B5E3B;text-align:right}.po-meta{font-size:12px;color:#555;text-align:right;margin-top:4px}.addr{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:24px}.ab h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:7px}.ab .nm{font-size:13px;font-weight:600;margin-bottom:4px}.ab p{font-size:12px;color:#444;line-height:1.6}.ref{display:flex;gap:28px;margin-bottom:22px;padding:11px 14px;background:#f5f5f2;border-radius:6px}.ri label{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;display:block;margin-bottom:2px}.ri span{font-size:12px;font-weight:500}table{width:100%;border-collapse:collapse;margin-bottom:18px}thead tr{background:#1B5E3B;color:#fff}thead th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase}thead th:last-child,thead th:nth-child(3),thead th:nth-child(4),thead th:nth-child(5){text-align:right}tbody tr{border-bottom:1px solid #eee}tbody tr:nth-child(even){background:#fafaf8}tbody td{padding:9px 10px;font-size:12px}.tots{display:flex;justify-content:flex-end;margin-bottom:24px}.tb{width:240px;border:1px solid #e5e5e5;border-radius:6px;overflow:hidden}.tr2{display:flex;justify-content:space-between;padding:8px 13px;font-size:12px}.tr2.sub{color:#444;border-bottom:1px solid #eee}.tr2.vt{color:#777;border-bottom:1px solid #eee;font-size:11px}.tr2.gd{background:#1B5E3B;color:#fff;font-weight:700;font-size:13px}.notes{margin-bottom:24px}.notes h4{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:6px}.notes p{font-size:12px;color:#444;padding:10px 13px;background:#f5f5f2;border-radius:6px;line-height:1.6}.sigs{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:32px;padding-top:18px;border-top:1px solid #eee}.sig{border-top:1px solid #444;padding-top:5px;font-size:10px;color:#888}.foot{border-top:1px solid #e5e5e5;padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:16px}@media print{body{padding:0}@page{margin:0}}</style></head><body><div class="page"><div class="header"><div><div class="co">Ambio AS</div><div class="co-sub">Innkjøp og varer</div></div><div><div class="po-title">INNKJØPSORDRE</div><div class="po-meta">${order.id}<br/>Dato: ${fmtDate(order.created)}</div></div></div><div class="addr"><div class="ab"><h4>Fra (Kjøper)</h4><div class="nm">Ambio AS</div><p>Innkjøpsavdelingen<br/>E-post: innkjop@ambio.no<br/>Ref: ${order.buyerRef||'—'}</p></div><div class="ab"><h4>Til (Leverandør)</h4><div class="nm">${order.supplierName}</div><p>${(order.supplierAddress||'').replace(/\n/g,'<br/>')}${order.supplierEmail?'<br/>'+order.supplierEmail:''}${order.supplierPhone?'<br/>Tlf: '+order.supplierPhone:''}${order.supplierOrgNr?'<br/>Org.nr: '+order.supplierOrgNr:''}</p></div></div><div class="ref"><div class="ri"><label>Ordrenummer</label><span>${order.id}</span></div><div class="ri"><label>Ordredato</label><span>${fmtDate(order.created)}</span></div><div class="ri"><label>Ønsket levering</label><span>${order.deliveryDate?fmtDate(order.deliveryDate):'—'}</span></div><div class="ri"><label>Betalingsbet.</label><span>${order.paymentTerms||'Net 30'}</span></div></div><table><thead><tr><th>Kode</th><th>Beskrivelse</th><th>Ant.</th><th>Enhet</th><th>Kostpris</th><th>Beløp</th></tr></thead><tbody>${lineRows}</tbody></table><div class="tots"><div class="tb"><div class="tr2 sub"><span>Sum eks. MVA</span><span>kr ${Number(total).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div><div class="tr2 vt"><span>MVA 25%</span><span>kr ${Number(vat).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div><div class="tr2 gd"><span>TOTALT</span><span>kr ${Number(total+vat).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div></div></div>${order.notes?`<div class="notes"><h4>Merknader</h4><p>${order.notes}</p></div>`:''}<div class="sigs"><div class="sig">Godkjent av (dato og signatur)</div><div class="sig">Leverandørens bekreftelse</div></div><div class="foot"><span>Ambio AS — Innkjøpsordre ${order.id}</span><span>Generert ${new Date().toLocaleString('nb-NO')}</span></div></div></body></html>`;
+  const html=`<!DOCTYPE html><html lang="nb"><head><meta charset="UTF-8"/><title>Innkjøpsordre ${order.id}</title><style>*{box-sizing:border-box;margin:0;padding:0}
+/* Focus visible — keyboard navigation */
+:focus-visible{outline:3px solid #1B5E3B;outline-offset:2px;border-radius:3px}
+:focus:not(:focus-visible){outline:none}
+/* Touch targets min 44px */
+@media(pointer:coarse){.btn,.nav-btn{min-height:44px}.fi,.fsel{min-height:44px;font-size:16px!important}}
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+/* Print */
+@media print{.sb,.ph-acts,.nav-btn,.user-pill,.btn,.skip-link{display:none!important}.main{margin:0!important}.card{box-shadow:none!important;border:1px solid #ccc!important}}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:0}.page{max-width:794px;margin:0 auto;padding:40px 48px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:18px;border-bottom:2.5px solid #1B5E3B}.co{font-size:20px;font-weight:700;color:#1B5E3B}.co-sub{font-size:11px;color:#666;margin-top:2px}.po-title{font-size:22px;font-weight:700;color:#1B5E3B;text-align:right}.po-meta{font-size:12px;color:#555;text-align:right;margin-top:4px}.addr{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:24px}.ab h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:7px}.ab .nm{font-size:13px;font-weight:600;margin-bottom:4px}.ab p{font-size:12px;color:#444;line-height:1.6}.ref{display:flex;gap:28px;margin-bottom:22px;padding:11px 14px;background:#f5f5f2;border-radius:6px}.ri label{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;display:block;margin-bottom:2px}.ri span{font-size:12px;font-weight:500}table{width:100%;border-collapse:collapse;margin-bottom:18px}thead tr{background:#1B5E3B;color:#fff}thead th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase}thead th:last-child,thead th:nth-child(3),thead th:nth-child(4),thead th:nth-child(5){text-align:right}tbody tr{border-bottom:1px solid #eee}tbody tr:nth-child(even){background:#fafaf8}tbody td{padding:9px 10px;font-size:12px}.tots{display:flex;justify-content:flex-end;margin-bottom:24px}.tb{width:240px;border:1px solid #e5e5e5;border-radius:6px;overflow:hidden}.tr2{display:flex;justify-content:space-between;padding:8px 13px;font-size:12px}.tr2.sub{color:#444;border-bottom:1px solid #eee}.tr2.vt{color:#777;border-bottom:1px solid #eee;font-size:11px}.tr2.gd{background:#1B5E3B;color:#fff;font-weight:700;font-size:13px}.notes{margin-bottom:24px}.notes h4{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:6px}.notes p{font-size:12px;color:#444;padding:10px 13px;background:#f5f5f2;border-radius:6px;line-height:1.6}.sigs{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:32px;padding-top:18px;border-top:1px solid #eee}.sig{border-top:1px solid #444;padding-top:5px;font-size:10px;color:#888}.foot{border-top:1px solid #e5e5e5;padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:16px}@media print{body{padding:0}@page{margin:0}}</style></head><body><div class="page"><div class="header"><div><div class="co">Ambio AS</div><div class="co-sub">Innkjøp og varer</div></div><div><div class="po-title">INNKJØPSORDRE</div><div class="po-meta">${order.id}<br/>Dato: ${fmtDate(order.created)}</div></div></div><div class="addr"><div class="ab"><h4>Fra (Kjøper)</h4><div class="nm">Ambio AS</div><p>Innkjøpsavdelingen<br/>E-post: innkjop@ambio.no<br/>Ref: ${order.buyerRef||'—'}</p></div><div class="ab"><h4>Til (Leverandør)</h4><div class="nm">${order.supplierName}</div><p>${(order.supplierAddress||'').replace(/\n/g,'<br/>')}${order.supplierEmail?'<br/>'+order.supplierEmail:''}${order.supplierPhone?'<br/>Tlf: '+order.supplierPhone:''}${order.supplierOrgNr?'<br/>Org.nr: '+order.supplierOrgNr:''}</p></div></div><div class="ref"><div class="ri"><label>Ordrenummer</label><span>${order.id}</span></div><div class="ri"><label>Ordredato</label><span>${fmtDate(order.created)}</span></div><div class="ri"><label>Ønsket levering</label><span>${order.deliveryDate?fmtDate(order.deliveryDate):'—'}</span></div><div class="ri"><label>Betalingsbet.</label><span>${order.paymentTerms||'Net 30'}</span></div></div><table><thead><tr><th>Kode</th><th>Beskrivelse</th><th>Ant.</th><th>Enhet</th><th>Kostpris</th><th>Beløp</th></tr></thead><tbody>${lineRows}</tbody></table><div class="tots"><div class="tb"><div class="tr2 sub"><span>Sum eks. MVA</span><span>kr ${Number(total).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div><div class="tr2 vt"><span>MVA 25%</span><span>kr ${Number(vat).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div><div class="tr2 gd"><span>TOTALT</span><span>kr ${Number(total+vat).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div></div></div>${order.notes?`<div class="notes"><h4>Merknader</h4><p>${order.notes}</p></div>`:''}<div class="sigs"><div class="sig">Godkjent av (dato og signatur)</div><div class="sig">Leverandørens bekreftelse</div></div><div class="foot"><span>Ambio AS — Innkjøpsordre ${order.id}</span><span>Generert ${new Date().toLocaleString('nb-NO')}</span></div></div></body></html>`;
   const w=window.open('','_blank');w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);
 }
 
 /* New Order Modal */
-function NewOrderModal({onClose}){
+function NewOrderModal({onClose, prefilledProduct=null}){
   const {suppliers,products,createOrder,notify,spApproved,spConfigured}=useApp();
   const [step,setStep]=useState(1);
   const [sup,setSup]=useState(null);
-  const [lines,setLines]=useState([]);
+  // Pre-fill with product if coming from product detail modal
+  const [lines,setLines]=useState(prefilledProduct ? [{
+    productId:   prefilledProduct.id,
+    productName: prefilledProduct.name,
+    productCode: prefilledProduct.code||'',
+    qty:         1,
+    unitPrice:   prefilledProduct.costPrice||prefilledProduct.salesPrice||0,
+    unit:        prefilledProduct.unitOfMeasureType||'stk',
+  }] : []);
   const [det,setDet]=useState({buyerRef:'',deliveryDate:'',deliveryAddress:'Ambio AS',paymentTerms:'Net 30',notes:''});
   const [sub,setSub]=useState(false);
 
@@ -683,6 +735,9 @@ function NewOrderModal({onClose}){
         </>}
 
         {step===2&&<>
+          {prefilledProduct&&<div class="al info" style={{marginBottom:10}}><i class="ti ti-package"/>
+            <span><strong>{prefilledProduct.name}</strong> er lagt til som varelinje. Legg til flere varer eller juster antall nedenfor.</span>
+          </div>}
           <div class="pol">
             <div class="polr hd"><span>Produkt</span><span style={{textAlign:'right'}}>Ant.</span><span style={{textAlign:'right'}}>Kostpris (kr)</span><span style={{textAlign:'right'}}>Sum</span><span/></div>
             {lines.length===0&&<div style={{padding:'20px',textAlign:'center',color:'var(--txt3)',fontSize:13}}>Ingen linjer ennå. Klikk «Legg til linje».</div>}
@@ -739,7 +794,7 @@ function NewOrderModal({onClose}){
 function OrderModal({order,onClose}){
   const lines=order.lines||[];
   const total=lines.reduce((s,l)=>s+Number(l.qty)*Number(l.unitPrice),0);
-  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()} role="dialog" aria-modal="true">
     <div class="mod" style={{width:660}}>
       <div class="mod-hd">
         <div>
@@ -752,7 +807,7 @@ function OrderModal({order,onClose}){
           {['approved','ordered','received'].includes(order.status)
             ? <button class="btn bsm bi" onClick={()=>printPDF(order)}><i class="ti ti-printer"/> PDF / Utskrift</button>
             : <span class="bdg bgr tsm" title="Ordren må godkjennes før utskrift"><i class="ti ti-lock"/> PDF låst — ikke godkjent</span>}
-          <button class="btn bsm bic" onClick={onClose}><i class="ti ti-x"/></button>
+          <button class="btn bsm bic" onClick={onClose} aria-label="Lukk dialog"><i class="ti ti-x"/></button>
         </div>
       </div>
       <div class="mod-bd">
@@ -828,7 +883,7 @@ function ProductDetailModal({product:p, onClose, onOrder}){
 
   const stockColor = p.stockOnHand===null?'var(--txt3)':p.stockOnHand<=0?'var(--dn)':p.stockOnHand<=3?'var(--wn)':'var(--brm)';
 
-  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()} role="dialog" aria-modal="true">
     <div class="mod" style={{width:620}}>
       <div class="mod-hd">
         <div>
@@ -836,8 +891,8 @@ function ProductDetailModal({product:p, onClose, onOrder}){
           {p.code&&<div class="tsm tm">Kode: <span class="fmo">{p.code}</span></div>}
         </div>
         <div class="f ic g2">
-          <button class="btn bsm bs" onClick={onOrder}><i class="ti ti-plus"/> Ny innkjøpsordre</button>
-          <button class="btn bsm bic" onClick={onClose}><i class="ti ti-x"/></button>
+          <button class="btn bsm bs" onClick={onOrder}><i class="ti ti-plus"/> Bestill dette produktet</button>
+          <button class="btn bsm bic" onClick={onClose} aria-label="Lukk dialog"><i class="ti ti-x"/></button>
         </div>
       </div>
       <div class="mod-bd">
@@ -930,7 +985,7 @@ function ProductDetailModal({product:p, onClose, onOrder}){
 function Products(){
   const {products,loading,fetchProducts,orders,syncStock}=useApp();
   const [search,setSearch]=useState('');
-  const [newOrderOpen,setNewOrderOpen]=useState(false);
+  const [newOrderOpen,setNewOrderOpen]=useState(false); // false | true | productObject
   const [doneOrder,setDoneOrder]=useState(null);
   const [selectedProduct,setSelectedProduct]=useState(null);
   const filtered=products.filter(p=>!search||p.name?.toLowerCase().includes(search.toLowerCase())||String(p.code||'').toLowerCase().includes(search.toLowerCase())||String(p.productNo||'').toLowerCase().includes(search.toLowerCase()));
@@ -971,14 +1026,20 @@ function Products(){
               <td style={{textAlign:'right'}}>{stock!==null?stock.toLocaleString('nb-NO'):<span class="tm">—</span>}</td>
               <td style={{textAlign:'right'}} class="tm tsm">{avail!==null?avail.toLocaleString('nb-NO'):'—'}</td>
               <td class="tsm tm">{p.unitOfMeasureType||'stk'}</td>
+              <td onClick={e=>e.stopPropagation()}>
+                <button class="btn bsm bs" style={{whiteSpace:'nowrap'}} title="Ny innkjøpsordre for dette produktet"
+                  onClick={()=>setNewOrderOpen(p)}>
+                  <i class="ti ti-shopping-cart-plus"/> Bestill
+                </button>
+              </td>
             </tr>;
           })}</tbody>
         </table>}
       </div>
     </div>
-    {newOrderOpen&&<NewOrderModal onClose={o=>{setNewOrderOpen(false);if(o)setDoneOrder(o);}}/>}
+    {newOrderOpen&&<NewOrderModal prefilledProduct={newOrderOpen!==true?newOrderOpen:null} onClose={o=>{setNewOrderOpen(false);if(o)setDoneOrder(o);}}/>}
     {doneOrder&&<OrderModal order={doneOrder} onClose={()=>setDoneOrder(null)}/>}
-    {selectedProduct&&<ProductDetailModal product={selectedProduct} onClose={()=>setSelectedProduct(null)} onOrder={()=>{setSelectedProduct(null);setNewOrderOpen(true);}}/> }
+    {selectedProduct&&<ProductDetailModal product={selectedProduct} onClose={()=>setSelectedProduct(null)} onOrder={()=>{setNewOrderOpen(selectedProduct);setSelectedProduct(null);}}/> }
   </>;
 }
 
@@ -1088,6 +1149,7 @@ function Suppliers(){
         </div>
       </div>
     </div>}
+  {orderDetail&&<OrderModal order={orderDetail} onClose={()=>setOrderDetail(null)}/>}
   </>;
 }
 
@@ -1204,12 +1266,12 @@ function ApprovalModal({order, onClose}){
   const [mode, setMode] = useState('approve'); // 'approve' | 'reject'
   const val=(order.lines||[]).reduce((s,l)=>s+Number(l.qty)*Number(l.unitPrice),0);
 
-  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()} role="dialog" aria-modal="true">
     <div class="mod" style={{width:480}}>
       <div class="mod-hd">
         <div><div class="mod-tl">{mode==='approve'?'Godkjenn innkjøpsordre':'Avvis innkjøpsordre'}</div>
         <div class="tsm tm">{order.id} — {order.supplierName}</div></div>
-        <button class="btn bsm bic" onClick={onClose}><i class="ti ti-x"/></button>
+        <button class="btn bsm bic" onClick={onClose} aria-label="Lukk dialog"><i class="ti ti-x"/></button>
       </div>
       <div class="mod-bd">
         <div class="sup-card" style={{marginBottom:14}}>
@@ -1443,6 +1505,61 @@ function Notifications(){
 }
 
 
+
+
+/* ── GDPR / Privacy Banner ──────────────────────────────────────────────── */
+function GdprBanner(){
+  const [visible, setVisible] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+
+  useEffect(()=>{
+    try {
+      const consent = sessionStorage.getItem('ambio_gdpr_consent');
+      if(!consent) setVisible(true);
+    } catch { /* sessionStorage not available */ }
+  },[]);
+
+  const accept = () => {
+    try { sessionStorage.setItem('ambio_gdpr_consent','accepted'); } catch {}
+    setVisible(false);
+  };
+
+  if(!visible) return null;
+
+  return <div class="gdpr-banner" role="dialog" aria-labelledby="gdpr-title" aria-modal="false">
+    <div style={{flex:1}}>
+      <p id="gdpr-title" style={{fontWeight:600,fontSize:14,marginBottom:4}}>
+        <i class="ti ti-shield-lock" style={{marginRight:6,color:'var(--br)'}}/>
+        Informasjonskapsler og personvern
+      </p>
+      <p>Denne appen bruker kun nødvendige informasjonskapsler for innlogging og sesjonsadministrasjon. 
+        Ingen sporings- eller markedsføringsinformasjonskapsler benyttes.</p>
+      {showDetails&&<div style={{marginTop:8,padding:'10px 12px',background:'var(--sur2)',borderRadius:'var(--rs)',fontSize:12}}>
+        <strong>Informasjonskapsler vi bruker:</strong>
+        <ul style={{paddingLeft:16,marginTop:4,lineHeight:1.8}}>
+          <li><strong>connect.sid</strong> — Sesjonsidentifikator, slettes når nettleseren lukkes</li>
+          <li><strong>ambio_gdpr_consent</strong> — Lagrer at du har sett dette varselet (kun i sesjonslagring)</li>
+        </ul>
+        <strong style={{display:'block',marginTop:8}}>Personopplysninger vi behandler:</strong>
+        <ul style={{paddingLeft:16,marginTop:4,lineHeight:1.8}}>
+          <li>Navn og e-postadresse (fra Microsoft 365-konto)</li>
+          <li>Handlinger utført i appen (aktivitetslogg)</li>
+        </ul>
+        <p style={{marginTop:8,color:'var(--txt3)'}}>
+          Databehandlingsansvarlig: Ambio AS · Behandlingsgrunnlag: Berettiget interesse (intern virksomhetsdrift)
+        </p>
+      </div>}
+    </div>
+    <div class="gdpr-btns">
+      <button class="btn bsm" onClick={()=>setShowDetails(v=>!v)} aria-expanded={showDetails}>
+        {showDetails?'Skjul detaljer':'Mer informasjon'}
+      </button>
+      <button class="btn bp" onClick={accept} aria-label="Aksepter nødvendige informasjonskapsler">
+        <i class="ti ti-check"/> Forstått
+      </button>
+    </div>
+  </div>;
+}
 
 /* ── Login Screen ────────────────────────────────────────────────────────── */
 function LoginScreen({error}){
@@ -1694,7 +1811,554 @@ function Settings(){
         <div class="st">Om</div>
         <div class="sd"><strong>Ambio Innkjøp og varer</strong> v1.0.0 · PowerOffice Go + SharePoint-integrasjon.</div>
       </div>
+      <div class="ss">
+        <div class="st">Personvern og GDPR</div>
+        <div class="sd">
+          <strong>Databehandlingsansvarlig:</strong> Ambio AS<br/>
+          <strong>Behandlingsgrunnlag:</strong> Berettiget interesse — intern virksomhetsdrift<br/>
+          <strong>Personopplysninger som behandles:</strong><br/>
+          <ul style={{paddingLeft:16,marginTop:6,lineHeight:1.9,fontSize:13}}>
+            <li>Navn og e-postadresse (fra Microsoft 365 ved innlogging)</li>
+            <li>Handlinger i systemet lagres i aktivitetslogg</li>
+            <li>Innkjøpsordrer med ditt navn som referanse</li>
+          </ul>
+          <strong>Informasjonskapsler:</strong><br/>
+          <ul style={{paddingLeft:16,marginTop:6,lineHeight:1.9,fontSize:13}}>
+            <li><code>connect.sid</code> — sesjonsidentifikator, slettes ved lukking av nettleser</li>
+          </ul>
+          <strong>Datalagring:</strong> Data lagres på serveren i Amsterdam (Fly.io, EU) og slettes ikke automatisk.<br/>
+          <strong>Dine rettigheter:</strong> Innsyn, retting og sletting kan kreves ved henvendelse til administrator.<br/>
+          <a href="https://www.datatilsynet.no/rettigheter-og-plikter/den-registrertes-rettigheter/" target="_blank" rel="noreferrer noopener" style={{color:'var(--in)',fontSize:13}}>
+            Les om dine rettigheter på Datatilsynet.no <i class="ti ti-external-link" style={{fontSize:11}}/>
+          </a>
+        </div>
+      </div>
     </div>
+  </>;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   LAGERTELLING — Stocktaking module
+   States: list → new/edit counting sheet → finalize → report
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Print CSS (injected into head) ────────────────────────────────────────── */
+const PRINT_CSS = `
+  @media print {
+    body > * { display: none !important; }
+    #print-area { display: block !important; }
+  }
+  #print-area { display: none; }
+`;
+
+/* ── Stocktake Report Modal ─────────────────────────────────────────────────── */
+function StocktakeReportModal({ stocktake, onClose }) {
+  const report = stocktake.report || {};
+  const lines  = stocktake.lines || [];
+
+  const printReport = () => {
+    const win = window.open('', '_blank');
+    win.document.write(`
+      <html><head><title>Lagerrapport — ${stocktake.id}</title>
+      <style>
+        body{font-family:sans-serif;font-size:12px;padding:20px;color:#111}
+        h1{font-size:18px;margin-bottom:4px}
+        .meta{color:#666;font-size:11px;margin-bottom:20px}
+        table{width:100%;border-collapse:collapse;margin-bottom:20px}
+        th{background:#f3f4f6;text-align:left;padding:7px 10px;font-size:11px;font-weight:600;border-bottom:2px solid #e5e7eb}
+        td{padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:11px}
+        .ok{color:#15803d}.warn{color:#b45309}.dn{color:#b91c1c}
+        .sum{background:#f9fafb;font-weight:600}
+        .section{font-size:13px;font-weight:700;margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid #e5e7eb}
+      </style></head><body>
+      <h1>Lagerrapport — ${stocktake.name || stocktake.id}</h1>
+      <div class="meta">Opprettet: ${new Date(stocktake.createdAt).toLocaleString('nb-NO')} · 
+        Fullført: ${stocktake.finalizedAt ? new Date(stocktake.finalizedAt).toLocaleString('nb-NO') : '—'} · 
+        Talt av: ${stocktake.createdBy || '—'}</div>
+      
+      <div class="section">Sammendrag</div>
+      <table><tbody>
+        <tr><td>Antall produkter talt</td><td><b>${report.totalCounted || 0}</b></td></tr>
+        <tr><td>Avvik funnet</td><td class="${(report.discrepancies||0)>0?'warn':'ok'}"><b>${report.discrepancies || 0}</b></td></tr>
+        <tr><td>Produkter med svinn</td><td class="${(report.shrinkageCount||0)>0?'dn':'ok'}"><b>${report.shrinkageCount || 0}</b></td></tr>
+        <tr><td>Total lagerverdi (talt)</td><td><b>kr ${(report.totalValue||0).toLocaleString('nb-NO',{minimumFractionDigits:2})}</b></td></tr>
+        <tr class="sum"><td>Verdiavvik</td><td class="${(report.valueDiscrepancy||0)<0?'dn':(report.valueDiscrepancy||0)>0?'warn':'ok'}"><b>kr ${(report.valueDiscrepancy||0).toLocaleString('nb-NO',{minimumFractionDigits:2})}</b></td></tr>
+      </tbody></table>
+
+      <div class="section">Alle varetellinger</div>
+      <table>
+        <thead><tr><th>Produkt</th><th>Kode</th><th style="text-align:right">System</th><th style="text-align:right">Talt</th><th style="text-align:right">Avvik</th><th style="text-align:right">Kost/enhet</th><th style="text-align:right">Verdiavvik</th><th>Status</th></tr></thead>
+        <tbody>${lines.map(l=>{
+          const diff = l.counted - l.systemQty;
+          const valDiff = diff * (l.unitCost||0);
+          return `<tr>
+            <td>${l.productName}</td><td>${l.productCode||'—'}</td>
+            <td style="text-align:right">${l.systemQty}</td>
+            <td style="text-align:right"><b>${l.counted}</b></td>
+            <td style="text-align:right" class="${diff<0?'dn':diff>0?'warn':'ok'}">${diff>0?'+':''}${diff}</td>
+            <td style="text-align:right">${l.unitCost?'kr '+l.unitCost.toLocaleString('nb-NO'):'—'}</td>
+            <td style="text-align:right" class="${valDiff<0?'dn':valDiff>0?'warn':'ok'}">${valDiff!==0?'kr '+(valDiff).toLocaleString('nb-NO',{minimumFractionDigits:2}):'kr 0'}</td>
+            <td class="${diff===0?'ok':diff<0?'dn':'warn'}">${diff===0?'OK':diff<0?'Svinn':'Over'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+      <div style="font-size:10px;color:#999;margin-top:30px;border-top:1px solid #eee;padding-top:8px">
+        Rapport generert av Ambio Innkjøp og varer · ${new Date().toLocaleString('nb-NO')}
+      </div>
+      </body></html>`);
+    win.document.close();
+    win.print();
+  };
+
+  const discLines = lines.filter(l => l.counted !== l.systemQty);
+  const okLines   = lines.filter(l => l.counted === l.systemQty);
+
+  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()} role="dialog" aria-modal="true">
+    <div class="mod" style={{width:680}}>
+      <div class="mod-hd">
+        <div>
+          <div class="f ic g2"><div class="mod-tl">Lagerrapport</div><span class="bdg bok"><i class="ti ti-circle-check"/> Fullført</span></div>
+          <div class="tsm tm">{stocktake.name||stocktake.id} · {fmtDate(stocktake.finalizedAt)}</div>
+        </div>
+        <div class="f ic g2">
+          <button class="btn bsm bi" onClick={printReport}><i class="ti ti-printer"/> Skriv ut rapport</button>
+          <button class="btn bsm bic" onClick={onClose} aria-label="Lukk dialog"><i class="ti ti-x"/></button>
+        </div>
+      </div>
+      <div class="mod-bd">
+        {/* Summary cards */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:14}}>
+          <div class="cmp-card"><div class="cmp-label">Produkter talt</div><div class="cmp-val">{report.totalCounted||0}</div></div>
+          <div class="cmp-card"><div class="cmp-label">Avvik</div><div class="cmp-val" style={{color:(report.discrepancies||0)>0?'var(--wn)':'var(--brm)'}}>{report.discrepancies||0}</div></div>
+          <div class="cmp-card"><div class="cmp-label">Svinn (mangler)</div><div class="cmp-val" style={{color:(report.shrinkageCount||0)>0?'var(--dn)':'var(--brm)'}}>{report.shrinkageCount||0}</div></div>
+          <div class="cmp-card"><div class="cmp-label">Verdiavvik</div><div class="cmp-val" style={{fontSize:14,color:(report.valueDiscrepancy||0)<0?'var(--dn)':(report.valueDiscrepancy||0)>0?'var(--wn)':'var(--brm)'}}>{kr(report.valueDiscrepancy||0)}</div></div>
+        </div>
+
+        {/* Discrepancies */}
+        {discLines.length>0&&<div style={{marginBottom:12}}>
+          <div class="fsb tsm" style={{marginBottom:6,color:'var(--wn)'}}><i class="ti ti-alert-triangle"/> {discLines.length} avvik funnet</div>
+          <div class="pol">
+            <div class="polr hd" style={{gridTemplateColumns:'1fr 70px 70px 70px 80px 70px'}}>
+              <span>Produkt</span><span style={{textAlign:'right'}}>System</span><span style={{textAlign:'right'}}>Talt</span><span style={{textAlign:'right'}}>Avvik</span><span style={{textAlign:'right'}}>Verdiavvik</span><span>Status</span>
+            </div>
+            {discLines.map((l,i)=>{
+              const diff=l.counted-l.systemQty;
+              const valDiff=diff*(l.unitCost||0);
+              return <div class="polr" key={i} style={{gridTemplateColumns:'1fr 70px 70px 70px 80px 70px',alignItems:'center'}}>
+                <div><div style={{fontSize:13,fontWeight:500}}>{l.productName}</div>{l.productCode&&<div class="txs tm">[{l.productCode}]</div>}</div>
+                <div style={{textAlign:'right',fontSize:13,color:'var(--txt2)'}}>{l.systemQty}</div>
+                <div style={{textAlign:'right',fontSize:13,fontWeight:600}}>{l.counted}</div>
+                <div style={{textAlign:'right',fontSize:13,fontWeight:700,color:diff<0?'var(--dn)':'var(--wn)'}}>{diff>0?'+':''}{diff}</div>
+                <div style={{textAlign:'right',fontSize:12,color:valDiff<0?'var(--dn)':'var(--wn)'}}>{valDiff!==0?kr(valDiff):'—'}</div>
+                <div><span class={`bdg ${diff<0?'bdn':'bwn'} txs`}>{diff<0?'Svinn':'Over'}</span></div>
+              </div>;
+            })}
+          </div>
+        </div>}
+
+        {/* OK products */}
+        {okLines.length>0&&<details>
+          <summary style={{fontSize:12,color:'var(--txt3)',cursor:'pointer',marginBottom:6}}>
+            <i class="ti ti-circle-check" style={{color:'var(--brm)',marginRight:4}}/>{okLines.length} produkter uten avvik
+          </summary>
+          <div class="pol" style={{marginTop:6}}>
+            {okLines.map((l,i)=><div class="polr" key={i} style={{gridTemplateColumns:'1fr 80px 80px',alignItems:'center'}}>
+              <div style={{fontSize:12}}>{l.productName}{l.productCode&&<span class="txs tm" style={{marginLeft:6}}>[{l.productCode}]</span>}</div>
+              <div style={{textAlign:'right',fontSize:12,color:'var(--txt2)'}}>{l.systemQty} stk</div>
+              <div style={{textAlign:'right'}}><span class="bdg bok txs">OK</span></div>
+            </div>)}
+          </div>
+        </details>}
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Stocktake Counting Sheet (edit mode) ───────────────────────────────────── */
+function StocktakeSheet({ stocktake, onClose, onFinalize }) {
+  const { products, syncStock, notify } = useApp();
+  const [lines, setLines] = useState(stocktake.lines || []);
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState('');
+
+  const updateCount = (productId, val) => {
+    setLines(prev => prev.map(l =>
+      l.productId === productId ? { ...l, counted: val === '' ? '' : Number(val) } : l
+    ));
+  };
+
+  const saveProgress = async () => {
+    setSaving(true);
+    try {
+      await fetch(`/api/stocktakes/${stocktake.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lines }),
+      });
+      notify('Fremgang lagret', 'success');
+    } finally { setSaving(false); }
+  };
+
+  const finalize = async () => {
+    if (!confirm('Avslutt lagertelling og oppdater lagerstatus?')) return;
+    setSaving(true);
+    try {
+      // Build report
+      const counted = lines.filter(l => l.counted !== '');
+      const discrepancies = counted.filter(l => Number(l.counted) !== l.systemQty);
+      const shrinkageCount = discrepancies.filter(l => Number(l.counted) < l.systemQty).length;
+      const totalValue = counted.reduce((s,l) => s + Number(l.counted) * (l.unitCost||0), 0);
+      const systemValue = counted.reduce((s,l) => s + l.systemQty * (l.unitCost||0), 0);
+
+      const report = {
+        totalCounted: counted.length,
+        discrepancies: discrepancies.length,
+        shrinkageCount,
+        totalValue,
+        systemValue,
+        valueDiscrepancy: totalValue - systemValue,
+        finalizedLines: counted.length,
+        skippedLines: lines.length - counted.length,
+      };
+
+      // Update POGO stock for each counted line
+      const results = [];
+      for (const line of counted) {
+        const diff = Number(line.counted) - line.systemQty;
+        if (diff !== 0 && line.productId) {
+          try {
+            const r = await fetch('/api/stock/adjust', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                productId: line.productId,
+                delta: diff,
+                reason: `Lagertelling ${stocktake.id}`,
+              }),
+            });
+            const d = await r.json();
+            results.push({ ...line, pogoUpdated: d.success });
+          } catch { results.push({ ...line, pogoUpdated: false }); }
+        }
+      }
+
+      // Finalize the stocktake
+      await fetch(`/api/stocktakes/${stocktake.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'finalized',
+          finalizedAt: new Date().toISOString(),
+          lines: lines.map(l => ({ ...l, counted: l.counted === '' ? null : Number(l.counted) })),
+          report,
+          historyNote: `Lagertelling fullført: ${stocktake.id} — ${report.totalCounted} produkter talt, ${report.discrepancies} avvik funnet`,
+        }),
+      });
+
+      notify(`Lagertelling fullført! ${report.discrepancies} avvik funnet.`, 'success');
+      onFinalize();
+    } finally { setSaving(false); }
+  };
+
+  const printSheet = () => {
+    const win = window.open('', '_blank');
+    const filteredLines = filter
+      ? lines.filter(l => l.productName.toLowerCase().includes(filter.toLowerCase()))
+      : lines;
+    win.document.write(`
+      <html><head><title>Lagetellingsliste — ${stocktake.name||stocktake.id}</title>
+      <style>
+        body{font-family:sans-serif;font-size:12px;padding:20px;color:#111}
+        h1{font-size:16px;margin-bottom:2px}
+        .meta{color:#666;font-size:10px;margin-bottom:16px}
+        table{width:100%;border-collapse:collapse}
+        th{background:#f3f4f6;text-align:left;padding:8px 10px;font-size:10px;font-weight:700;border-bottom:2px solid #ccc;text-transform:uppercase}
+        td{padding:9px 10px;border-bottom:1px solid #e5e7eb;font-size:11px}
+        .count-box{width:80px;height:26px;border:2px solid #333;display:inline-block;vertical-align:middle}
+        tr:nth-child(even){background:#f9fafb}
+        .footer{font-size:10px;color:#999;margin-top:20px;border-top:1px solid #eee;padding-top:8px;display:flex;justify-content:space-between}
+        @media print{@page{margin:1.5cm}}
+      </style></head><body>
+      <h1>📋 Lagetellingsliste — ${stocktake.name||stocktake.id}</h1>
+      <div class="meta">
+        Dato: ${new Date(stocktake.createdAt).toLocaleDateString('nb-NO')} &nbsp;·&nbsp;
+        Ansvarlig: _________________________ &nbsp;·&nbsp;
+        Godkjent: _________________________
+      </div>
+      <table>
+        <thead><tr>
+          <th style="width:30px">#</th>
+          <th>Produkt</th>
+          <th>Kode</th>
+          <th style="text-align:right">System</th>
+          <th style="text-align:center">Talt antall</th>
+          <th style="text-align:center">Avvik</th>
+          <th>Notat</th>
+        </tr></thead>
+        <tbody>${filteredLines.map((l,i)=>`
+          <tr>
+            <td style="color:#999">${i+1}</td>
+            <td><b>${l.productName}</b></td>
+            <td style="color:#666;font-size:10px">${l.productCode||'—'}</td>
+            <td style="text-align:right">${l.systemQty}</td>
+            <td style="text-align:center"><span class="count-box">&nbsp;</span></td>
+            <td style="text-align:center"><span class="count-box">&nbsp;</span></td>
+            <td></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="footer">
+        <span>Ambio Innkjøp og varer · ${new Date().toLocaleString('nb-NO')}</span>
+        <span>Side 1 av 1 &nbsp;·&nbsp; ${filteredLines.length} produkter</span>
+      </div>
+      </body></html>`);
+    win.document.close();
+    win.print();
+  };
+
+  const filtered = filter
+    ? lines.filter(l => l.productName.toLowerCase().includes(filter.toLowerCase()) || l.productCode?.toLowerCase().includes(filter.toLowerCase()))
+    : lines;
+
+  const countedNum = lines.filter(l => l.counted !== '' && l.counted !== null && l.counted !== undefined).length;
+  const discNum = lines.filter(l => l.counted !== '' && l.counted !== null && Number(l.counted) !== l.systemQty).length;
+
+  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()} role="dialog" aria-modal="true">
+    <div class="mod" style={{width:760,maxHeight:'92vh',display:'flex',flexDirection:'column'}}>
+      <div class="mod-hd" style={{flexShrink:0}}>
+        <div>
+          <div class="f ic g2">
+            <div class="mod-tl">{stocktake.name||stocktake.id}</div>
+            <span class="bdg bwn"><i class="ti ti-clipboard-list"/> Pågår</span>
+          </div>
+          <div class="tsm tm">{countedNum} av {lines.length} talt · {discNum} avvik</div>
+        </div>
+        <div class="f ic g2">
+          <button class="btn bsm bi" onClick={printSheet}><i class="ti ti-printer"/> Skriv ut liste</button>
+          <button class="btn bsm" onClick={saveProgress} disabled={saving}><i class={`ti ${saving?'ti-loader spin':'ti-device-floppy'}`}/> Lagre</button>
+          <button class="btn bsm bic" onClick={onClose} aria-label="Lukk dialog"><i class="ti ti-x"/></button>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{padding:'8px 20px',borderBottom:'1px solid var(--bdr)',flexShrink:0}}>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--txt3)',marginBottom:4}}>
+          <span>Fremgang</span><span>{countedNum}/{lines.length}</span>
+        </div>
+        <div class="sb-trk" style={{height:6,borderRadius:3}}>
+          <div class="sb-fil" style={{width:`${lines.length>0?(countedNum/lines.length*100):0}%`,height:'100%',borderRadius:3,background:discNum>0?'var(--wn)':'var(--br)',transition:'width .3s'}}/>
+        </div>
+        <div class="f ic g2" style={{marginTop:6,flexWrap:'wrap'}}>
+          <input class="fi" style={{maxWidth:240,padding:'5px 10px',fontSize:12}} placeholder="Filtrer produkt..." value={filter} onChange={e=>setFilter(e.target.value)}/>
+          {discNum>0&&<span class="bdg bwn tsm"><i class="ti ti-alert-triangle"/> {discNum} avvik</span>}
+          {countedNum===lines.length&&<span class="bdg bok tsm"><i class="ti ti-circle-check"/> Alle talt!</span>}
+        </div>
+      </div>
+
+      {/* Counting sheet */}
+      <div style={{overflow:'auto',flex:1,padding:'0 0 8px'}}>
+        <table class="dt" style={{tableLayout:'fixed'}}>
+          <thead><tr>
+            <th style={{width:32}}>#</th>
+            <th>Produkt</th>
+            <th style={{width:90,textAlign:'right'}}>System</th>
+            <th style={{width:110,textAlign:'right'}}>Talt antall</th>
+            <th style={{width:80,textAlign:'right'}}>Avvik</th>
+            <th style={{width:70}}>Status</th>
+          </tr></thead>
+          <tbody>{filtered.map((l,i)=>{
+            const counted = l.counted;
+            const hasCount = counted !== '' && counted !== null && counted !== undefined;
+            const diff = hasCount ? Number(counted) - l.systemQty : null;
+            const rowBg = !hasCount ? 'transparent' : diff===0 ? 'rgba(21,128,61,.04)' : diff<0 ? 'rgba(185,28,28,.05)' : 'rgba(180,83,9,.05)';
+            return <tr key={l.productId||i} style={{background:rowBg}}>
+              <td class="tsm tm" style={{paddingLeft:16}}>{i+1}</td>
+              <td>
+                <div class="fw5" style={{fontSize:13}}>{l.productName}</div>
+                {l.productCode&&<div class="txs tm">[{l.productCode}]</div>}
+                {l.unitCost>0&&<div class="txs tm">Kostpris: {kr(l.unitCost)}</div>}
+              </td>
+              <td style={{textAlign:'right',fontSize:13,color:'var(--txt2)'}}>{l.systemQty} stk</td>
+              <td style={{textAlign:'right'}}>
+                <input type="number" min="0" class="fi" style={{width:80,textAlign:'right',padding:'5px 8px',fontSize:14,fontWeight:600,borderColor:diff!==null&&diff!==0?diff<0?'var(--dn)':'var(--wn)':'var(--bdr)'}}
+                  value={counted??''}
+                  onChange={e=>updateCount(l.productId, e.target.value)}
+                  placeholder="—"
+                />
+              </td>
+              <td style={{textAlign:'right',fontSize:13,fontWeight:700,color:diff===null?'var(--txt3)':diff===0?'var(--brm)':diff<0?'var(--dn)':'var(--wn)'}}>
+                {diff===null?'—':diff===0?'✓':diff>0?`+${diff}`:diff}
+              </td>
+              <td>
+                {!hasCount?<span class="bdg bgr txs">Ikke talt</span>
+                  :diff===0?<span class="bdg bok txs">OK</span>
+                  :diff<0?<span class="bdg bdn txs">Svinn</span>
+                  :<span class="bdg bwn txs">Over</span>}
+              </td>
+            </tr>;
+          })}</tbody>
+        </table>
+      </div>
+
+      {/* Footer actions */}
+      <div class="mod-ft" style={{flexShrink:0}}>
+        <button class="btn" onClick={onClose}>Lukk</button>
+        <button class="btn bsm" onClick={saveProgress} disabled={saving}><i class="ti ti-device-floppy"/> Lagre fremgang</button>
+        <button class="btn bp" onClick={finalize} disabled={saving||countedNum===0}>
+          {saving?<><i class="ti ti-loader spin"/> Fullfører…</>:<><i class="ti ti-circle-check"/> Fullfør telling & oppdater lager</>}
+        </button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Main Stocktaking Page ───────────────────────────────────────────────────── */
+function Lagertelling() {
+  const { products, notify, addHist } = useApp();
+  const [stocktakes, setStocktakes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [activeSheet, setActiveSheet] = useState(null);
+  const [viewReport, setViewReport] = useState(null);
+  const [newName, setNewName] = useState('');
+  const [newFilter, setNewFilter] = useState('all'); // all | low | group
+
+  const loadStocktakes = async () => {
+    try {
+      const r = await fetch('/api/stocktakes');
+      const d = await r.json();
+      setStocktakes(Array.isArray(d) ? d : []);
+    } catch { notify('Kunne ikke laste tellinger', 'error'); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadStocktakes(); }, []);
+
+  const createNew = async () => {
+    if (!products.length) return notify('Last inn produkter først', 'warning');
+    setCreating(true);
+    try {
+      // Filter products based on selection
+      let prods = products;
+      if (newFilter === 'low') prods = products.filter(p => (p.stockOnHand||0) <= 3);
+
+      const lines = prods.map(p => ({
+        productId:   p.id,
+        productName: p.name,
+        productCode: p.code || '',
+        systemQty:   p.stockOnHand ?? 0,
+        unitCost:    p.costPrice ?? 0,
+        counted:     '',
+        note:        '',
+      }));
+
+      const r = await fetch('/api/stocktakes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newName || `Lagertelling ${new Date().toLocaleDateString('nb-NO')}`,
+          lines,
+          productFilter: newFilter,
+        }),
+      });
+      const st = await r.json();
+      setStocktakes(prev => [st, ...prev]);
+      setNewName('');
+      notify(`Lagertelling opprettet med ${lines.length} produkter`, 'success');
+      setActiveSheet(st);
+    } finally { setCreating(false); }
+  };
+
+  const openSheet = async (st) => {
+    // Reload fresh from server
+    const r = await fetch(`/api/stocktakes/${st.id}`);
+    const fresh = await r.json();
+    setActiveSheet(fresh);
+  };
+
+  const statusMeta = {
+    open:      { label:'Pågår',    cls:'bwn', icon:'ti-clipboard-list' },
+    finalized: { label:'Fullført', cls:'bok', icon:'ti-circle-check' },
+  };
+
+  return <>
+    <div class="ph">
+      <span class="ph-title">Lagertelling</span>
+    </div>
+    <div class="pb">
+      {/* Create new */}
+      <div class="ss">
+        <div class="st">Ny lagertelling</div>
+        <div class="sd">Opprett en telleliste basert på gjeldende lagerstatus fra PowerOffice Go. Skriv ut listen, tell fysisk, og registrer avvik.</div>
+        <div class="f g2" style={{flexWrap:'wrap',alignItems:'flex-end'}}>
+          <div class="fg" style={{flex:'1 1 200px',margin:0}}>
+            <label class="fl">Navn på telling</label>
+            <input class="fi" value={newName} onChange={e=>setNewName(e.target.value)} placeholder={`Lagertelling ${new Date().toLocaleDateString('nb-NO')}`}/>
+          </div>
+          <div class="fg" style={{flex:'0 0 180px',margin:0}}>
+            <label class="fl">Produktutvalg</label>
+            <select class="fi fsel" value={newFilter} onChange={e=>setNewFilter(e.target.value)}>
+              <option value="all">Alle produkter ({products.length})</option>
+              <option value="low">Kun lavt lager (≤3 stk)</option>
+            </select>
+          </div>
+          <button class="btn bp" onClick={createNew} disabled={creating||!products.length}>
+            {creating?<><i class="ti ti-loader spin"/> Oppretter…</>:<><i class="ti ti-plus"/> Opprett telleliste</>}
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      {stocktakes.length>0&&<div class="mg" style={{marginBottom:16}}>
+        <div class="mc"><div class="ml">Totalt</div><div class="mv">{stocktakes.length}</div><div class="ms">Alle tellinger</div></div>
+        <div class="mc"><div class="ml">Pågår</div><div class="mv">{stocktakes.filter(s=>s.status==='open').length}</div></div>
+        <div class="mc"><div class="ml">Fullført</div><div class="mv" style={{color:'var(--brm)'}}>{stocktakes.filter(s=>s.status==='finalized').length}</div></div>
+        <div class="mc"><div class="ml">Siste avvik</div>
+          <div class="mv" style={{fontSize:16,color:(stocktakes.find(s=>s.status==='finalized')?.report?.discrepancies||0)>0?'var(--wn)':'var(--brm)'}}>
+            {stocktakes.find(s=>s.status==='finalized')?.report?.discrepancies??'—'}
+          </div>
+          <div class="ms">Siste fullførte telling</div>
+        </div>
+      </div>}
+
+      {/* List */}
+      {loading?<div class="card"><div class="empty"><i class="ti ti-loader spin"/><p>Laster tellinger…</p></div></div>
+      :stocktakes.length===0?<div class="card"><div class="empty"><i class="ti ti-clipboard-list"/><p>Ingen lagertellinger ennå.<br/>Opprett din første telling ovenfor.</p></div></div>
+      :<div class="card"><table class="dt">
+        <thead><tr><th>ID</th><th>Navn</th><th>Produkter</th><th>Talt</th><th>Avvik</th><th>Dato</th><th>Status</th><th></th></tr></thead>
+        <tbody>{stocktakes.map(st=>{
+          const m=statusMeta[st.status]||{label:st.status,cls:'bgr',icon:'ti-help'};
+          const lines=st.lines||[];
+          const counted=lines.filter(l=>l.counted!==''&&l.counted!==null).length;
+          return <tr key={st.id}>
+            <td class="fmo tsm">{st.id}</td>
+            <td class="fw5">{st.name||st.id}</td>
+            <td class="tsm tm">{lines.length} produkter</td>
+            <td class="tsm">{st.status==='finalized'?`${st.report?.totalCounted||0}/${lines.length}`:`${counted}/${lines.length}`}</td>
+            <td>{st.report?.discrepancies!=null?<span class={`bdg ${st.report.discrepancies>0?'bwn':'bok'} tsm`}>{st.report.discrepancies} avvik</span>:<span class="tsm tm">—</span>}</td>
+            <td class="tsm tm">{fmtDate(st.createdAt)}</td>
+            <td><span class={`bdg ${m.cls}`}><i class={`ti ${m.icon}`}/> {m.label}</span></td>
+            <td>
+              <div class="f g2">
+                {st.status==='open'&&<button class="btn bsm bp" onClick={()=>openSheet(st)}><i class="ti ti-clipboard-list"/> Åpne</button>}
+                {st.status==='finalized'&&<button class="btn bsm bs" onClick={()=>setViewReport(st)}><i class="ti ti-chart-bar"/> Rapport</button>}
+                <button class="btn bsm bic bi" onClick={()=>{
+                  const s=st; const win=window.open('','_blank');
+                  const lines=s.lines||[];
+                  win.document.write(`<html><head><title>Tellelist</title><style>body{font-family:sans-serif;font-size:12px;padding:20px}table{width:100%;border-collapse:collapse}th{background:#f3f4f6;padding:8px;text-align:left;font-size:10px;text-transform:uppercase;border-bottom:2px solid #ccc}td{padding:9px 8px;border-bottom:1px solid #eee}.box{width:70px;height:24px;border:2px solid #333;display:inline-block}</style></head><body><h2>${s.name||s.id}</h2><p style="color:#666;font-size:11px">Dato: ${new Date(s.createdAt).toLocaleDateString('nb-NO')} · Ansvarlig: _________________</p><table><thead><tr><th>#</th><th>Produkt</th><th>Kode</th><th>System</th><th>Talt antall</th><th>Notat</th></tr></thead><tbody>${lines.map((l,i)=>`<tr><td>${i+1}</td><td>${l.productName}</td><td>${l.productCode||'—'}</td><td style="text-align:right">${l.systemQty}</td><td><span class="box"></span></td><td style="width:200px"></td></tr>`).join('')}</tbody></table></body></html>`);
+                  win.document.close(); win.print();
+                }} title="Skriv ut telleliste"><i class="ti ti-printer"/></button>
+              </div>
+            </td>
+          </tr>;
+        })}</tbody>
+      </table></div>}
+    </div>
+
+    {activeSheet&&<StocktakeSheet stocktake={activeSheet} onClose={()=>setActiveSheet(null)}
+      onFinalize={()=>{ setActiveSheet(null); loadStocktakes(); }}/>}
+    {viewReport&&<StocktakeReportModal stocktake={viewReport} onClose={()=>setViewReport(null)}/>}
   </>;
 }
 
@@ -1703,11 +2367,12 @@ const PAGES=[
   {id:'statistics',label:'Statistikk',icon:'ti-chart-bar',sec:'PowerOffice Go'},
   {id:'suppliers',label:'Leverandører',icon:'ti-building-store'},
   {id:'orders',label:'Innkjøpsordrer',icon:'ti-file-invoice',sec:'Innkjøp'},
+  {id:'lagertelling',label:'Lagertelling',icon:'ti-clipboard-list'},
   {id:'history',label:'Aktivitetslogg',icon:'ti-history'},
   {id:'users',label:'Brukere',icon:'ti-users',sec:'Administrasjon',adminOnly:true},
   {id:'settings',label:'Innstillinger',icon:'ti-settings',adminOnly:true},
 ];
-const COMPS={products:Products,suppliers:Suppliers,orders:Orders,history:History,statistics:Statistics,users:AdminUsers,settings:Settings};
+const COMPS={products:Products,suppliers:Suppliers,orders:Orders,lagertelling:Lagertelling,history:History,statistics:Statistics,users:AdminUsers,settings:Settings};
 
 
 /* Statistics Page */
@@ -2071,21 +2736,23 @@ function Shell(){
     <div style={{fontSize:14}}>Laster data…</div>
   </div>;
   return <div class="app">
-    <aside class={`sb ${col?'c':''}`}>
+    <a href="#main-content" class="skip-link">Hopp til hovedinnhold</a>
+    <GdprBanner/>
+    <aside class={`sb ${col?'c':''}`} aria-label="Navigasjon">
       <div class="sb-hd">
         <div class="logo"><i class="ti ti-building-warehouse"/>{!col&&<span>Ambio Innkjøp<br/><small>og varer</small></span>}</div>
-        <button class="sb-tog" onClick={()=>setCol(v=>!v)} title="Veksle meny"><i class={`ti ${col?'ti-layout-sidebar-left-expand':'ti-layout-sidebar-left-collapse'}`}/></button>
+        <button class="sb-tog" onClick={()=>setCol(v=>!v)} title={col?"Utvid meny":"Skjul meny"} aria-label={col?"Utvid meny":"Skjul meny"} aria-expanded={!col}><i class={`ti ${col?'ti-layout-sidebar-left-expand':'ti-layout-sidebar-left-collapse'}`}/></button>
       </div>
       <div class={`conn-pill ${conn==='ok'?'ok':conn==='error'?'err':'loading'}`}>
         <i class={`ti ${conn==='ok'?'ti-circle-check':conn==='error'?'ti-alert-circle':'ti-loader spin'}`} style={{fontSize:13,flexShrink:0}}/>
         {!col&&<span>{conn==='ok'?'PowerOffice Go tilkoblet':conn==='error'?'Tilkoblingsfeil':'Kobler til…'}</span>}
       </div>
-      <nav class="sb-nav">
+      <nav class="sb-nav" aria-label="Hovednavigasjon" role="navigation">
         {PAGES.filter(p=>!p.adminOnly||authUser?.role==='administrator').map((p,i,arr)=>{
           const prev=arr[i-1];
           return <div key={p.id}>
             {p.sec&&p.sec!==prev?.sec&&!col&&<div class="nav-sec">{p.sec}</div>}
-            <button class={`nav-btn ${page===p.id?'act':''}`} onClick={()=>setPage(p.id)} title={col?p.label:undefined}>
+            <button class={`nav-btn ${page===p.id?'act':''}`} onClick={()=>setPage(p.id)} title={col?p.label:undefined} aria-current={page===p.id?"page":undefined}>
               <i class={`ti ${p.icon}`}/>
               {!col&&<span>{p.label}</span>}
               {p.id==='orders'&&(()=>{const pend=orders.filter(o=>o.status==='pending_approval').length;const total=orders.length;return pend>0?<span class="nav-bdg">{pend}⚡</span>:total>0?<span class="nav-bdg">{total}</span>:null;})()}
@@ -2097,10 +2764,10 @@ function Shell(){
         <i class="ti ti-alert-triangle"/> {connErr}
       </div>}
     </aside>
-    <main class="main">
+    <main class="main" id="main-content" role="main" aria-label="Hovedinnhold">
       {/* Topbar with user menu */}
       <div style={{position:'sticky',top:0,zIndex:11,background:'var(--sur)',borderBottom:'1px solid var(--bdr)',padding:'8px 20px',display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8}}>
-        {authUser?.devMode&&<span class="bdg bwn txs"><i class="ti ti-code"/> Dev-modus</span>}
+        {authUser?.devMode&&<div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",background:"#FEF3C7",border:"1px solid #F59E0B",borderRadius:4,fontSize:12,color:"#92400E",fontWeight:500}}><i class="ti ti-alert-triangle"/> Testmodus — Microsoft-innlogging deaktivert</div>}
         <UserMenu/>
       </div>
       <Active/>
