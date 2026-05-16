@@ -46,6 +46,8 @@ const AZURE = {
   scopes: ['openid', 'profile', 'email', 'User.Read'],
 };
 
+function isAzureConfigured() { return !!(AZURE.clientId && AZURE.clientSecret); }
+
 // ── Auth middleware ──────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
   if (req.session?.user) return next();
