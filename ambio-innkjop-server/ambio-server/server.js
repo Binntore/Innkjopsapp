@@ -19,6 +19,7 @@ import {
   saveReceivedLines, savePogoManualSteps, getHistory, addHistory, getDbStats,
   getUsers, getUser, upsertUser, removeUser,
   getAllStocktakes, getStocktake, createStocktake, updateStocktake,
+  getProductSettings, setProductMinStock,
 } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -325,6 +326,17 @@ app.patch('/api/stocktakes/:id', requireAuth, (req, res) => {
   res.json(st);
 });
 
+// ── Product Settings ─────────────────────────────────────────────────────────
+app.get('/api/product-settings', requireAuth, (req, res) => {
+  res.json(getProductSettings());
+});
+
+app.post('/api/product-settings/:productId', requireAuth, (req, res) => {
+  const { minStock } = req.body;
+  const result = setProductMinStock(req.params.productId, minStock ?? 0);
+  res.json(result);
+});
+
 // ── PowerOffice Go API proxy ──────────────────────────────────────────────────
 // All requests to /api/pogo/* are forwarded to BASE_URL/*
 app.all('/api/pogo/*', async (req, res) => {
@@ -433,18 +445,28 @@ app.get('/api/stats/sales', requireAuth, async (req, res) => {
     // First try: GET /Contacts?customerGroupId=... or individual lookups
     for (const cid of customerIds) {
       try {
-        // Try /Contacts/{id} first
+        // POGO: CustomerId on invoice = Contact.Id (GUID-based internal ID)
+        // Try multiple endpoints
         let cr = await pogGet(`/Contacts/${cid}`);
-        if (!cr || (!cr.Name && !cr.LegalName)) {
-          // Try /Customers endpoint
+        console.log(`[Stats] /Contacts/${cid} → ${cr ? JSON.stringify(cr).slice(0,120) : 'null'}`);
+        if (!cr || (!cr.Name && !cr.LegalName && !cr.CompanyName)) {
           cr = await pogGet(`/Customers/${cid}`);
+          console.log(`[Stats] /Customers/${cid} → ${cr ? JSON.stringify(cr).slice(0,120) : 'null'}`);
+        }
+        if (!cr || (!cr.Name && !cr.LegalName && !cr.CompanyName)) {
+          // Try searching by CustomerNo
+          const search = await pogGet(`/Contacts?customerNo=${cid}`);
+          if (Array.isArray(search) && search.length > 0) cr = search[0];
+          else if (search?.data?.length > 0) cr = search.data[0];
+          console.log(`[Stats] /Contacts?customerNo=${cid} → ${cr ? JSON.stringify(cr).slice(0,80) : 'null'}`);
         }
         if (cr) {
-          const name = cr.Name || cr.LegalName || cr.FirstName && cr.LastName
-            ? `${cr.FirstName||''} ${cr.LastName||''}`.trim()
-            : null;
+          // Fix operator precedence bug — extract name correctly
+          const name = cr.Name || cr.LegalName ||
+            ((cr.FirstName || cr.LastName) ? `${cr.FirstName||''} ${cr.LastName||''}`.trim() : null) ||
+            cr.DisplayName || cr.ContactName || cr.CompanyName || null;
           customerNames[cid] = name || `Kunde ${cid}`;
-          console.log(`[Stats] Kunde ${cid} → ${customerNames[cid]} (felt: ${Object.keys(cr).join(',')})`);
+          console.log(`[Stats] Kunde ${cid} → "${customerNames[cid]}" | Name="${cr.Name}" LegalName="${cr.LegalName}" CompanyName="${cr.CompanyName}" DisplayName="${cr.DisplayName}" ContactName="${cr.ContactName}" | alle felt: ${Object.keys(cr).join(',')}`);
         } else {
           customerNames[cid] = `Kunde ${cid}`;
         }
@@ -531,6 +553,13 @@ app.get('/api/stats/sales', requireAuth, async (req, res) => {
         totalAmount:  invRevenue,
         lineCount:    (inv.lines||[]).length,
         status:       inv.Status || '',
+        // Include normalized lines for client-side drill-down filtering
+        lines: (inv.lines||[]).map(l => ({
+          productCode: l.ProductCode || l.productCode || '',
+          productName: (l.Description || l.productName || '').split('\n')[0].trim(),
+          qty:         Number(l.Quantity || l.quantity || 0),
+          lineTotal:   Number(l.NetAmount || l.TotalAmount || 0),
+        })),
       });
     }
 

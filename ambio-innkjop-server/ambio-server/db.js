@@ -21,8 +21,9 @@ let store = {
   orders:     [],
   history:    [],
   users:      [],
-  stocktakes: [], // { id, name, status, createdAt, finalizedAt, lines, report }
-  _version:   3,
+  stocktakes: [],
+  productSettings: {}, // { [productId]: { minStock: number } }
+  _version:   4,
 };
 let _nextHistId = 1;
 
@@ -167,6 +168,21 @@ export function updateStocktake(id, fields) {
   store.stocktakes[idx] = { ...store.stocktakes[idx], ...fields, updatedAt: new Date().toISOString() };
   _save();
   return store.stocktakes[idx];
+}
+
+// ── Product Settings ─────────────────────────────────────────────────────────
+export function getProductSettings() {
+  return store.productSettings || {};
+}
+
+export function setProductMinStock(productId, minStock) {
+  if (!store.productSettings) store.productSettings = {};
+  store.productSettings[String(productId)] = {
+    ...(store.productSettings[String(productId)] || {}),
+    minStock: Number(minStock),
+  };
+  _save();
+  return store.productSettings[String(productId)];
 }
 
 export function getDbStats() {

@@ -196,22 +196,56 @@ body{font-family:var(--font);background:var(--bg);color:var(--txt);font-size:14p
 /* Better mobile table scrolling */
 @media(max-width:768px){
   .card{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .dt{min-width:500px}
-  .pb{padding:12px}
-  .ph{padding:12px 16px}
-  .ph-title{font-size:18px}
-  .mod{width:calc(100vw - 16px)!important;margin:8px;max-height:95vh!important}
-  .mod-bd{padding:12px}
-  .mod-hd{padding:14px}
+  .dt{min-width:480px}
+  .pb{padding:10px 12px}
+  .ph{padding:10px 12px;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:10}
+  .ph-title{font-size:17px}
+  .ph-acts{gap:6px;flex-wrap:wrap}
+  .ph-acts .btn{font-size:12px;padding:6px 10px;min-height:36px}
+  .mod{width:calc(100vw - 8px)!important;margin:4px;max-height:97vh!important;border-radius:12px!important}
+  .mod-bd{padding:10px 12px;overflow-y:auto}
+  .mod-hd{padding:12px 14px}
+  .mod-ft{padding:10px 14px;flex-wrap:wrap;gap:8px}
   .mg{grid-template-columns:repeat(2,1fr)!important}
-  .login-card{padding:28px 24px}
-  .ss{padding:16px}
+  .login-card{padding:24px 20px}
+  .ss{padding:14px}
+  /* Topbar on mobile */
+  .topbar{padding:6px 12px!important}
+  /* Testmodus banner compact */
+  .testmodus-banner{font-size:11px!important;padding:4px 8px!important;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
 @media(max-width:480px){
   .mg{grid-template-columns:1fr!important}
-  .ph-acts{gap:6px}
-  .ph-acts .btn{font-size:12px;padding:6px 10px}
+  .ph-title{font-size:15px}
+  .btn{font-size:12px}
+  /* Hide less important table columns on tiny screens */
+  .dt .hide-sm{display:none}
 }
+
+.show-xs{display:none}
+@media(max-width:480px){.hide-xs{display:none}.show-xs{display:inline}}
+/* Topbar layout */
+.topbar{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:8px 20px;background:var(--sur);border-bottom:1px solid var(--bdr);flex-wrap:wrap}
+
+/* Logo: white+orange text transparent PNG */
+.sb img[alt="Ambio Water"],.sb img[alt="AW"]{filter:none} /* dark sidebar — looks great */
+.login-card img[alt="Ambio Water"]{filter:none} /* white bg — invert to dark */
+/* On login card (white bg): make white text dark, keep orange */
+.login-card img[alt="Ambio Water"]{
+  filter: drop-shadow(0 0 0 transparent);
+}
+@media(prefers-color-scheme:light){
+  /* White bg: invert white->black, orange stays recognizable */
+  .login-card img[alt="Ambio Water"]{
+    filter: brightness(0); /* make everything black — clean on white */
+  }
+}
+
+/* Clickable stats rows */
+.dt tbody tr[style*="cursor: pointer"]:hover,
+.dt tbody tr[style*="cursor:pointer"]:hover { background: var(--sur2) !important; }
+.dt tbody tr[style*="cursor: pointer"] td:last-child::after,
+.dt tbody tr[style*="cursor:pointer"] td:last-child::after { content: ' ↗'; font-size:10px; color: var(--br); opacity:0.6; }
 </style>
 </head>
 <body>
@@ -288,7 +322,8 @@ function AppProvider({children}){
   const [dbReady,setDbReady]=useState(false);
   const [authUser,setAuthUser]=useState(null);   // null=loading, false=not logged in, {...}=user
   const [authLoading,setAuthLoading]=useState(true);
-  const [spApproved,setSpApproved]=useState({}); // {supplierName: true/false/null}
+  const [spApproved,setSpApproved]=useState({});
+  const [productSettings,setProductSettings]=useState({}); // {[productId]: {minStock}} // {supplierName: true/false/null}
   const [spData,setSpData]=useState({}); // full SP record per supplier
   const [spConfigured,setSpConfigured]=useState(false);
   const [spLoading,setSpLoading]=useState(false);
@@ -337,10 +372,12 @@ function AppProvider({children}){
   // Load orders + history from database
   const loadFromDb=useCallback(async()=>{
     try{
-      const [ordersRes, histRes] = await Promise.all([
+      const [ordersRes, histRes, settingsRes] = await Promise.all([
         fetch('/api/orders').then(r=>r.json()),
         fetch('/api/history').then(r=>r.json()),
+        fetch('/api/product-settings').then(r=>r.json()).catch(()=>({})),
       ]);
+      if(settingsRes && typeof settingsRes === 'object') setProductSettings(settingsRes);
       if(Array.isArray(ordersRes)) setOrders(ordersRes);
       if(Array.isArray(histRes)) setHistory(histRes.map(h=>({...h,id:String(h.id)})));
       setDbReady(true);
@@ -608,7 +645,7 @@ function AppProvider({children}){
     setOrders([]); setHistory([]);
   },[]);
 
-  return <Ctx.Provider value={{conn,connErr,authUser,authLoading,logout,products,suppliers,orders,history,notifs,loading,dbReady,notify,addHist,fetchProducts,fetchSuppliers,createOrder,submitForApproval,approveOrder,rejectOrder,sendOrder,receiveOrder,syncStock,setProducts,patchOrder,spApproved,spData,spConfigured,spLoading,syncSharePoint}}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{conn,connErr,authUser,authLoading,logout,products,suppliers,orders,history,notifs,loading,dbReady,notify,addHist,fetchProducts,fetchSuppliers,createOrder,submitForApproval,approveOrder,rejectOrder,sendOrder,receiveOrder,syncStock,setProducts,patchOrder,spApproved,spData,spConfigured,spLoading,syncSharePoint,productSettings,setProductSettings}}>{children}</Ctx.Provider>;
 }
 const useApp=()=>useContext(Ctx);
 
@@ -628,7 +665,7 @@ function printPDF(order){
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 /* Print */
 @media print{.sb,.ph-acts,.nav-btn,.user-pill,.btn,.skip-link{display:none!important}.main{margin:0!important}.card{box-shadow:none!important;border:1px solid #ccc!important}}
-body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:0}.page{max-width:794px;margin:0 auto;padding:40px 48px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:18px;border-bottom:2.5px solid #1B5E3B}.co{font-size:20px;font-weight:700;color:#1B5E3B}.co-sub{font-size:11px;color:#666;margin-top:2px}.po-title{font-size:22px;font-weight:700;color:#1B5E3B;text-align:right}.po-meta{font-size:12px;color:#555;text-align:right;margin-top:4px}.addr{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:24px}.ab h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:7px}.ab .nm{font-size:13px;font-weight:600;margin-bottom:4px}.ab p{font-size:12px;color:#444;line-height:1.6}.ref{display:flex;gap:28px;margin-bottom:22px;padding:11px 14px;background:#f5f5f2;border-radius:6px}.ri label{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;display:block;margin-bottom:2px}.ri span{font-size:12px;font-weight:500}table{width:100%;border-collapse:collapse;margin-bottom:18px}thead tr{background:#1B5E3B;color:#fff}thead th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase}thead th:last-child,thead th:nth-child(3),thead th:nth-child(4),thead th:nth-child(5){text-align:right}tbody tr{border-bottom:1px solid #eee}tbody tr:nth-child(even){background:#fafaf8}tbody td{padding:9px 10px;font-size:12px}.tots{display:flex;justify-content:flex-end;margin-bottom:24px}.tb{width:240px;border:1px solid #e5e5e5;border-radius:6px;overflow:hidden}.tr2{display:flex;justify-content:space-between;padding:8px 13px;font-size:12px}.tr2.sub{color:#444;border-bottom:1px solid #eee}.tr2.vt{color:#777;border-bottom:1px solid #eee;font-size:11px}.tr2.gd{background:#1B5E3B;color:#fff;font-weight:700;font-size:13px}.notes{margin-bottom:24px}.notes h4{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:6px}.notes p{font-size:12px;color:#444;padding:10px 13px;background:#f5f5f2;border-radius:6px;line-height:1.6}.sigs{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:32px;padding-top:18px;border-top:1px solid #eee}.sig{border-top:1px solid #444;padding-top:5px;font-size:10px;color:#888}.foot{border-top:1px solid #e5e5e5;padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:16px}@media print{body{padding:0}@page{margin:0}}</style></head><body><div class="page"><div class="header"><div><div class="co">Ambio AS</div><div class="co-sub">Innkjøp og varer</div></div><div><div class="po-title">INNKJØPSORDRE</div><div class="po-meta">${order.id}<br/>Dato: ${fmtDate(order.created)}</div></div></div><div class="addr"><div class="ab"><h4>Fra (Kjøper)</h4><div class="nm">Ambio AS</div><p>Innkjøpsavdelingen<br/>E-post: innkjop@ambio.no<br/>Ref: ${order.buyerRef||'—'}</p></div><div class="ab"><h4>Til (Leverandør)</h4><div class="nm">${order.supplierName}</div><p>${(order.supplierAddress||'').replace(/\n/g,'<br/>')}${order.supplierEmail?'<br/>'+order.supplierEmail:''}${order.supplierPhone?'<br/>Tlf: '+order.supplierPhone:''}${order.supplierOrgNr?'<br/>Org.nr: '+order.supplierOrgNr:''}</p></div></div><div class="ref"><div class="ri"><label>Ordrenummer</label><span>${order.id}</span></div><div class="ri"><label>Ordredato</label><span>${fmtDate(order.created)}</span></div><div class="ri"><label>Ønsket levering</label><span>${order.deliveryDate?fmtDate(order.deliveryDate):'—'}</span></div><div class="ri"><label>Betalingsbet.</label><span>${order.paymentTerms||'Net 30'}</span></div></div><table><thead><tr><th>Kode</th><th>Beskrivelse</th><th>Ant.</th><th>Enhet</th><th>Kostpris</th><th>Beløp</th></tr></thead><tbody>${lineRows}</tbody></table><div class="tots"><div class="tb"><div class="tr2 sub"><span>Sum eks. MVA</span><span>kr ${Number(total).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div><div class="tr2 vt"><span>MVA 25%</span><span>kr ${Number(vat).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div><div class="tr2 gd"><span>TOTALT</span><span>kr ${Number(total+vat).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div></div></div>${order.notes?`<div class="notes"><h4>Merknader</h4><p>${order.notes}</p></div>`:''}<div class="sigs"><div class="sig">Godkjent av (dato og signatur)</div><div class="sig">Leverandørens bekreftelse</div></div><div class="foot"><span>Ambio AS — Innkjøpsordre ${order.id}</span><span>Generert ${new Date().toLocaleString('nb-NO')}</span></div></div></body></html>`;
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:0}.page{max-width:794px;margin:0 auto;padding:40px 48px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:18px;border-bottom:2.5px solid #1B5E3B}.co{font-size:20px;font-weight:700;color:#1B5E3B}.co-sub{font-size:11px;color:#666;margin-top:2px}.po-title{font-size:22px;font-weight:700;color:#1B5E3B;text-align:right}.po-meta{font-size:12px;color:#555;text-align:right;margin-top:4px}.addr{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:24px}.ab h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:7px}.ab .nm{font-size:13px;font-weight:600;margin-bottom:4px}.ab p{font-size:12px;color:#444;line-height:1.6}.ref{display:flex;gap:28px;margin-bottom:22px;padding:11px 14px;background:#f5f5f2;border-radius:6px}.ri label{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;display:block;margin-bottom:2px}.ri span{font-size:12px;font-weight:500}table{width:100%;border-collapse:collapse;margin-bottom:18px}thead tr{background:#1B5E3B;color:#fff}thead th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase}thead th:last-child,thead th:nth-child(3),thead th:nth-child(4),thead th:nth-child(5){text-align:right}tbody tr{border-bottom:1px solid #eee}tbody tr:nth-child(even){background:#fafaf8}tbody td{padding:9px 10px;font-size:12px}.tots{display:flex;justify-content:flex-end;margin-bottom:24px}.tb{width:240px;border:1px solid #e5e5e5;border-radius:6px;overflow:hidden}.tr2{display:flex;justify-content:space-between;padding:8px 13px;font-size:12px}.tr2.sub{color:#444;border-bottom:1px solid #eee}.tr2.vt{color:#777;border-bottom:1px solid #eee;font-size:11px}.tr2.gd{background:#1B5E3B;color:#fff;font-weight:700;font-size:13px}.notes{margin-bottom:24px}.notes h4{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:6px}.notes p{font-size:12px;color:#444;padding:10px 13px;background:#f5f5f2;border-radius:6px;line-height:1.6}.sigs{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:32px;padding-top:18px;border-top:1px solid #eee}.sig{border-top:1px solid #444;padding-top:5px;font-size:10px;color:#888}.foot{border-top:1px solid #e5e5e5;padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:16px}@media print{body{padding:0}@page{margin:0}}</style></head><body><div class="page"><div class="header"><div><div class="co">Ambio AS</div><div class="co-sub">Innkjøp og lager</div></div><div><div class="po-title">INNKJØPSORDRE</div><div class="po-meta">${order.id}<br/>Dato: ${fmtDate(order.created)}</div></div></div><div class="addr"><div class="ab"><h4>Fra (Kjøper)</h4><div class="nm">Ambio AS</div><p>Innkjøpsavdelingen<br/>E-post: innkjop@ambio.no<br/>Ref: ${order.buyerRef||'—'}</p></div><div class="ab"><h4>Til (Leverandør)</h4><div class="nm">${order.supplierName}</div><p>${(order.supplierAddress||'').replace(/\n/g,'<br/>')}${order.supplierEmail?'<br/>'+order.supplierEmail:''}${order.supplierPhone?'<br/>Tlf: '+order.supplierPhone:''}${order.supplierOrgNr?'<br/>Org.nr: '+order.supplierOrgNr:''}</p></div></div><div class="ref"><div class="ri"><label>Ordrenummer</label><span>${order.id}</span></div><div class="ri"><label>Ordredato</label><span>${fmtDate(order.created)}</span></div><div class="ri"><label>Ønsket levering</label><span>${order.deliveryDate?fmtDate(order.deliveryDate):'—'}</span></div><div class="ri"><label>Betalingsbet.</label><span>${order.paymentTerms||'Net 30'}</span></div></div><table><thead><tr><th>Kode</th><th>Beskrivelse</th><th>Ant.</th><th>Enhet</th><th>Kostpris</th><th>Beløp</th></tr></thead><tbody>${lineRows}</tbody></table><div class="tots"><div class="tb"><div class="tr2 sub"><span>Sum eks. MVA</span><span>kr ${Number(total).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div><div class="tr2 vt"><span>MVA 25%</span><span>kr ${Number(vat).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div><div class="tr2 gd"><span>TOTALT</span><span>kr ${Number(total+vat).toLocaleString('nb-NO',{minimumFractionDigits:2})}</span></div></div></div>${order.notes?`<div class="notes"><h4>Merknader</h4><p>${order.notes}</p></div>`:''}<div class="sigs"><div class="sig">Godkjent av (dato og signatur)</div><div class="sig">Leverandørens bekreftelse</div></div><div class="foot"><span>Ambio AS — Innkjøpsordre ${order.id}</span><span>Generert ${new Date().toLocaleString('nb-NO')}</span></div></div></body></html>`;
   const w=window.open('','_blank');w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);
 }
 
@@ -739,9 +776,9 @@ function NewOrderModal({onClose, prefilledProduct=null}){
             <span><strong>{prefilledProduct.name}</strong> er lagt til som varelinje. Legg til flere varer eller juster antall nedenfor.</span>
           </div>}
           <div class="pol">
-            <div class="polr hd"><span>Produkt</span><span style={{textAlign:'right'}}>Ant.</span><span style={{textAlign:'right'}}>Kostpris (kr)</span><span style={{textAlign:'right'}}>Sum</span><span/></div>
+            <div class="polr hd" style={{gridTemplateColumns:'1fr 60px 110px 90px 34px'}}><span>Produkt</span><span style={{textAlign:'right'}}>Ant.</span><span style={{textAlign:'right'}}>Kostpris (kr)</span><span style={{textAlign:'right'}}>Sum</span><span/></div>
             {lines.length===0&&<div style={{padding:'20px',textAlign:'center',color:'var(--txt3)',fontSize:13}}>Ingen linjer ennå. Klikk «Legg til linje».</div>}
-            {lines.map((ln,i)=><div class="polr" key={i}>
+            {lines.map((ln,i)=><div class="polr" key={i} style={{gridTemplateColumns:'1fr 60px 110px 90px 34px',alignItems:'center'}}>
               <div>
                 <select class="fi fsel" style={{marginBottom:4,fontSize:12,padding:'6px 8px'}} value={ln.productId} onChange={e=>updLine(i,'productId',e.target.value)}>
                   <option value="">— Velg fra POGO (eller skriv under) —</option>
@@ -869,7 +906,7 @@ function OrderModal({order,onClose}){
 /* Pages */
 /* ── Product Detail Modal ──────────────────────────────────────────────────── */
 function ProductDetailModal({product:p, onClose, onOrder}){
-  const {orders, history} = useApp();
+  const {orders, history, productSettings, setProductSettings} = useApp();
 
   // Find all POs involving this product
   const relatedOrders = orders.filter(o=>
@@ -925,6 +962,17 @@ function ProductDetailModal({product:p, onClose, onOrder}){
               <div><span class="tm">Lagerstyrt:</span> {p.IsStockItem||p.isStockItem?<span class="bdg bok txs">Ja</span>:<span class="bdg bgr txs">Nei</span>}</div>
               {p.costPrice!=null&&p.salesPrice!=null&&p.costPrice>0&&<div><span class="tm">Bruttomargin:</span> <span style={{color:'var(--brm)',fontWeight:600}}>{((p.salesPrice-p.costPrice)/p.salesPrice*100).toFixed(1)}%</span></div>}
               {p.costPrice!=null&&p.salesPrice!=null&&<div><span class="tm">Dekningsbidrag:</span> <span class="fmo">{kr(p.salesPrice-p.costPrice)}</span></div>}
+              <div style={{gridColumn:'1/-1',marginTop:4,paddingTop:8,borderTop:'1px solid var(--bdr)'}}>
+                <span class="tm">Minimumsbeholdning (varsel):</span>{' '}
+                <input type="number" min="0" class="fi" style={{width:70,padding:'3px 6px',fontSize:12,display:'inline-block',textAlign:'right',marginLeft:6}}
+                  placeholder="0" value={productSettings[String(p.id)]?.minStock??''}
+                  onChange={async e=>{
+                    const v=Number(e.target.value)||0;
+                    await fetch(`/api/product-settings/${p.id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({minStock:v})});
+                    setProductSettings(prev=>({...prev,[String(p.id)]:{...(prev[String(p.id)]||{}),minStock:v}}));
+                  }}/>{' '}
+                <span class="txs tm">stk (0 = ingen varsel)</span>
+              </div>
             </div>
             {p.description&&<div style={{marginTop:10,paddingTop:10,borderTop:'1px solid var(--bdr)',fontSize:13,color:'var(--txt2)'}}>{p.description}</div>}
           </div>
@@ -983,7 +1031,7 @@ function ProductDetailModal({product:p, onClose, onOrder}){
 }
 
 function Products(){
-  const {products,loading,fetchProducts,orders,syncStock}=useApp();
+  const {products,loading,fetchProducts,orders,syncStock,productSettings,setProductSettings,notify}=useApp();
   const [search,setSearch]=useState('');
   const [newOrderOpen,setNewOrderOpen]=useState(false); // false | true | productObject
   const [doneOrder,setDoneOrder]=useState(null);
@@ -1007,6 +1055,39 @@ function Products(){
       </div>
       {products.length===0&&!loading.products&&<div class="al info"><i class="ti ti-info-circle"/><span>Ingen produkter hentet ennå. Sjekk at server kjører og at det finnes produkter i POGO-demomiljøet. Klikk <strong>Oppdater</strong>.</span></div>}
       <div class="shd"><span class="stt">Alle produkter ({filtered.length})</span><input class="fi" style={{width:220}} placeholder="Søk navn, kode…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+
+      {(()=>{const alerts=products.filter(p=>{const m=productSettings[String(p.id)]?.minStock;return m>0?(p.stockOnHand??0)<=m:(p.stockOnHand??0)<=0&&p.isStockItem;});return alerts.length>0?<div class="al warn" style={{marginBottom:12,flexDirection:'column',gap:6}}><div class="f ic g2"><i class="ti ti-alert-triangle"/><strong>{alerts.length} produkt{alerts.length!==1?'er':''} under minimumsbeholdning</strong></div><div style={{display:'flex',flexWrap:'wrap',gap:6}}>{alerts.map(p=>{const m=productSettings[String(p.id)]?.minStock;return <span key={p.id} class="bdg bwn" style={{cursor:'pointer'}} onClick={()=>setSelectedProduct(p)}>{p.name} — {p.stockOnHand??0} stk{m>0?` (min ${m})`:''}</span>;})}</div></div>:null;})()}
+
+      {products.filter(p=>p.stockOnHand!=null).length>0&&<div class="card" style={{marginBottom:12}}>
+        <div class="card-hd"><span class="card-title"><i class="ti ti-trending-down" style={{marginRight:5}}/>5 laveste lagerbeholdninger</span></div>
+        <table class="dt">
+          <thead><tr><th>Produkt</th><th style={{textAlign:'right'}}>Lager</th><th style={{textAlign:'right'}}>Lagerverdi</th><th style={{width:140}}>Min.beholdning</th><th/></tr></thead>
+          <tbody>{[...products].filter(p=>p.stockOnHand!=null).sort((a,b)=>(a.stockOnHand??0)-(b.stockOnHand??0)).slice(0,5).map(p=>{
+            const val=(p.stockOnHand??0)*(p.costPrice??0);
+            const minStock=productSettings[String(p.id)]?.minStock;
+            const isLow=minStock>0?(p.stockOnHand??0)<=minStock:(p.stockOnHand??0)<=0;
+            return <tr key={p.id} style={{cursor:'pointer'}} onClick={()=>setSelectedProduct(p)}>
+              <td><div class="fw5">{p.name}</div>{p.code&&<div class="txs tm">[{p.code}]</div>}</td>
+              <td style={{textAlign:'right'}}><span style={{fontWeight:700,color:isLow?'var(--dn)':'var(--txt)',fontFamily:'var(--mono)'}}>{(p.stockOnHand??0).toLocaleString('nb-NO')}</span><span class="txs tm"> stk</span></td>
+              <td style={{textAlign:'right'}} class="fmo">{kr(val)}</td>
+              <td onClick={e=>e.stopPropagation()}>
+                <div class="f ic g2">
+                  <input type="number" min="0" class="fi" style={{width:60,padding:'4px 6px',fontSize:12,textAlign:'right'}}
+                    placeholder="—" value={minStock??''} title="Minimumsbeholdning"
+                    onChange={async e=>{
+                      const v=Number(e.target.value)||0;
+                      await fetch(`/api/product-settings/${p.id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({minStock:v})});
+                      setProductSettings(prev=>({...prev,[String(p.id)]:{...(prev[String(p.id)]||{}),minStock:v}}));
+                    }}/>
+                  <span class="txs tm">stk min</span>
+                </div>
+              </td>
+              <td onClick={e=>e.stopPropagation()}><button class="btn bsm bic" onClick={()=>setSelectedProduct(p)}><i class="ti ti-eye"/></button></td>
+            </tr>;
+          })}</tbody>
+        </table>
+      </div>}
+
       <div class="card">
         {loading.products?<div class="empty"><i class="ti ti-loader spin"/><p>Henter produkter fra PowerOffice Go…</p></div>
         :filtered.length===0?<div class="empty"><i class="ti ti-package-off"/><p>Ingen produkter funnet</p></div>
@@ -1571,10 +1652,13 @@ function LoginScreen({error}){
 
   return <div class="login-screen">
     <div class="login-card">
-      <div class="login-logo" style={{padding:'8px 0 16px',background:'#1A1A1A',borderRadius:'var(--rs)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-        <img src="/logo.png" alt="Ambio Water" style={{height:64,objectFit:"contain",maxWidth:220}}/>
+      <div class="login-logo" style={{padding:'4px 0 20px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <picture>
+          <source srcSet="/logo.png" media="(prefers-color-scheme: dark)"/>
+          <img src="/logo-dark.png" alt="Ambio Water" style={{height:64,objectFit:"contain",maxWidth:220}}/>
+        </picture>
       </div>
-      <div class="login-title" style={{marginTop:16}}>Innkjøp og varer</div>
+      <div class="login-title" style={{marginTop:12}}>Innkjøp og lager</div>
       <div class="login-sub">Logg inn med din Ambio Microsoft 365-konto</div>
 
       {noRole&&<div class="login-error">
@@ -2366,22 +2450,103 @@ function Lagertelling() {
 }
 
 const PAGES=[
-  {id:'products',label:'Produkter',icon:'ti-package',sec:'PowerOffice Go'},
-  {id:'statistics',label:'Statistikk',icon:'ti-chart-bar',sec:'PowerOffice Go'},
+  {id:'products',label:'Produkter',icon:'ti-package',sec:'Ambio Innkjøp og lager'},
+  {id:'statistics',label:'Statistikk',icon:'ti-chart-bar'},
   {id:'suppliers',label:'Leverandører',icon:'ti-building-store'},
-  {id:'orders',label:'Innkjøpsordrer',icon:'ti-file-invoice',sec:'Innkjøp'},
+  {id:'orders',label:'Innkjøpsordrer',icon:'ti-file-invoice'},
   {id:'lagertelling',label:'Lagertelling',icon:'ti-clipboard-list'},
   {id:'history',label:'Aktivitetslogg',icon:'ti-history'},
-  {id:'users',label:'Brukere',icon:'ti-users',sec:'Administrasjon',adminOnly:true},
+  {id:'users',label:'Brukere',icon:'ti-users',adminOnly:true},
   {id:'settings',label:'Innstillinger',icon:'ti-settings',adminOnly:true},
 ];
 const COMPS={products:Products,suppliers:Suppliers,orders:Orders,lagertelling:Lagertelling,history:History,statistics:Statistics,users:AdminUsers,settings:Settings};
 
 
 /* Statistics Page */
+
+/* ── Statistics Drill-down Modal ─────────────────────────────────────────── */
+function StatsDrillModal({ title, subtitle, invoices, onClose }) {
+  if (!invoices || !invoices.length) return null;
+
+  const totalRev = invoices.reduce((s, inv) => s + (inv.totalAmount || 0), 0);
+  const totalLines = invoices.reduce((s, inv) => s + (inv.lineCount || 0), 0);
+
+  // Collect unique products and customers from these invoices
+  const products = {};
+  const customers = {};
+  invoices.forEach(inv => {
+    if (inv.customerName) customers[inv.customerId || inv.customerName] = inv.customerName;
+    (inv.lines || []).forEach(l => {
+      const k = l.productCode || l.productName;
+      if (k) products[k] = { name: l.productName, code: l.productCode, qty: (products[k]?.qty||0)+Number(l.qty||0), rev: (products[k]?.rev||0)+Number(l.lineTotal||0) };
+    });
+  });
+
+  return <div class="mo" onClick={e=>e.target===e.currentTarget&&onClose()} role="dialog" aria-modal="true">
+    <div class="mod" style={{width:660}}>
+      <div class="mod-hd">
+        <div>
+          <div class="mod-tl">{title}</div>
+          {subtitle&&<div class="tsm tm">{subtitle}</div>}
+          <div class="tsm" style={{marginTop:3,color:'var(--br)'}}>
+            {invoices.length} faktura{invoices.length!==1?'er':''} · {kr(totalRev)} omsetning
+          </div>
+        </div>
+        <button class="btn bsm bic" onClick={onClose} aria-label="Lukk"><i class="ti ti-x"/></button>
+      </div>
+      <div class="mod-bd">
+
+        {/* Products in these invoices */}
+        {Object.keys(products).length > 0 && <div style={{marginBottom:14}}>
+          <div class="fsb tsm" style={{marginBottom:6,color:'var(--br)'}}><i class="ti ti-package"/> Produkter</div>
+          <div class="pol">
+            <div class="polr hd" style={{gridTemplateColumns:'1fr 70px 90px'}}>
+              <span>Produkt</span><span style={{textAlign:'right'}}>Antall</span><span style={{textAlign:'right'}}>Omsetning</span>
+            </div>
+            {Object.values(products).sort((a,b)=>b.rev-a.rev).map((p,i)=>
+              <div class="polr" key={i} style={{gridTemplateColumns:'1fr 70px 90px',alignItems:'center'}}>
+                <div><span class="fw5" style={{fontSize:13}}>{p.name}</span>{p.code&&<span class="txs tm" style={{marginLeft:6}}>[{p.code}]</span>}</div>
+                <div style={{textAlign:'right',fontSize:13}}>{p.qty}</div>
+                <div style={{textAlign:'right'}} class="fmo fsb">{kr(p.rev)}</div>
+              </div>
+            )}
+          </div>
+        </div>}
+
+        {/* Customers in these invoices */}
+        {Object.keys(customers).length > 0 && <div style={{marginBottom:14}}>
+          <div class="fsb tsm" style={{marginBottom:6,color:'var(--br)'}}><i class="ti ti-users"/> Kunder</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+            {Object.values(customers).map((n,i)=><span key={i} class="bdg bgr">{n}</span>)}
+          </div>
+        </div>}
+
+        {/* Invoice list */}
+        <div class="fsb tsm" style={{marginBottom:6,color:'var(--br)'}}><i class="ti ti-file-invoice"/> Fakturaer</div>
+        <div class="card">
+          <table class="dt">
+            <thead><tr>
+              <th>Fakturanr.</th><th>Kunde</th><th style={{textAlign:'right'}}>Beløp</th><th>Dato</th><th>Status</th>
+            </tr></thead>
+            <tbody>{invoices.map((inv,i)=><tr key={i}>
+              <td class="fmo tsm">{inv.invoiceNo||inv.id}</td>
+              <td class="fw5">{inv.customerName||`Kunde ${inv.customerId}`}</td>
+              <td style={{textAlign:'right'}} class="fmo fsb">{kr(inv.totalAmount||0)}</td>
+              <td class="tsm tm">{fmtDate(inv.date)}</td>
+              <td class="tsm">{inv.status||'—'}</td>
+            </tr>)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
 function Statistics(){
   const {notify} = useApp();
   const [tab, setTab] = useState('oversikt');
+  const [drillModal, setDrillModal] = useState(null); // {title, subtitle, invoices}
   const today = new Date();
   const thisYearFrom = `${today.getFullYear()}-01-01`;
   const todayStr = today.toISOString().slice(0,10);
@@ -2613,9 +2778,10 @@ function Statistics(){
                 <thead><tr><th>#</th><th>Produkt</th><th>Kode</th><th style={{textAlign:'right'}}>Antall</th><th style={{textAlign:'right'}}>Omsetning</th><th style={{textAlign:'right'}}>Kunder</th><th style={{textAlign:'right'}}>Fakturaer</th>{showCmp&&cmpData&&<><th style={{textAlign:'right'}}>Forrige per.</th><th style={{textAlign:'right'}}>Endring</th></>}</tr></thead>
                 <tbody>{(data.byProduct||[]).map((p,i)=>{
                   const cmpP = showCmp&&cmpData ? cmpData.byProduct.find(x=>x.name===p.name) : null;
-                  return <tr key={i}>
+                  const prodInvoices = (data.invoices||[]).filter(inv=>(inv.lines||[]).some(l=>l.productCode===p.code||l.productName===p.name));
+                  return <tr key={i} style={{cursor:'pointer'}} onClick={()=>setDrillModal({title:p.name,subtitle:`${p.code?'['+p.code+'] ':''} ${p.qty} enheter · ${(p.customers?.size||0)} kunde${(p.customers?.size||0)!==1?'r':''}`,invoices:prodInvoices})} title="Klikk for å se fakturaer">
                     <td class="txs tm">{i+1}</td>
-                    <td class="fw5">{p.name}</td>
+                    <td><div class="fw5">{p.name}</div>{p.code&&<div class="txs tm">[{p.code}]</div>}</td>
                     <td class="fmo tsm tm">{p.code||'—'}</td>
                     <td style={{textAlign:'right'}} class="fmo">{p.qty.toLocaleString('nb-NO')}</td>
                     <td style={{textAlign:'right'}} class="fmo fsb">{krS(p.revenue)}</td>
@@ -2642,9 +2808,10 @@ function Statistics(){
                 <thead><tr><th>#</th><th>Kunde</th><th style={{textAlign:'right'}}>Fakturaer</th><th style={{textAlign:'right'}}>Enheter</th><th style={{textAlign:'right'}}>Omsetning</th><th style={{textAlign:'right'}}>Produkter</th><th style={{textAlign:'right'}}>Gj.snitt/faktura</th>{showCmp&&cmpData&&<><th style={{textAlign:'right'}}>Forrige per.</th><th style={{textAlign:'right'}}>Endring</th></>}</tr></thead>
                 <tbody>{(data.byCustomer||[]).map((c,i)=>{
                   const cmpC=showCmp&&cmpData?cmpData.byCustomer.find(x=>x.id===c.id):null;
-                  return <tr key={i}>
+                  const custInvoices = (data.invoices||[]).filter(inv=>String(inv.customerId)===String(c.id));
+                  return <tr key={i} style={{cursor:'pointer'}} onClick={()=>setDrillModal({title:c.name!=='ukjent'?c.name:`Kunde ${c.id}`,subtitle:`${c.invoiceCount} faktura${c.invoiceCount!==1?'er':''} · ${c.qty} enheter`,invoices:custInvoices})} title="Klikk for å se fakturaer">
                     <td class="txs tm">{i+1}</td>
-                    <td class="fw5">{c.name!=='ukjent'?c.name:`Kunde ID: ${c.id||c.name}`}</td>
+                    <td><div class="fw5">{c.name!=='ukjent'?c.name:`Kunde ID: ${c.id||c.name}`}</div></td>
                     <td style={{textAlign:'right'}} class="tsm">{c.invoiceCount}</td>
                     <td style={{textAlign:'right'}} class="fmo tsm">{c.qty.toLocaleString('nb-NO')}</td>
                     <td style={{textAlign:'right'}} class="fmo fsb">{krS(c.revenue)}</td>
@@ -2672,7 +2839,8 @@ function Statistics(){
               <thead><tr><th>Måned</th><th style={{textAlign:'right'}}>Fakturaer</th><th style={{textAlign:'right'}}>Enheter</th><th style={{textAlign:'right'}}>Omsetning</th>{showCmp&&cmpData&&<><th style={{textAlign:'right'}}>Forrige per.</th><th style={{textAlign:'right'}}>Endring</th></>}</tr></thead>
               <tbody>{(data.byMonth||[]).map((m,i)=>{
                 const cmpM=showCmp&&cmpData?cmpData.byMonth.find(x=>x.key===m.key):null;
-                return <tr key={i}>
+                const mInvoices=(data.invoices||[]).filter(inv=>{const d=inv.date?new Date(inv.date):null;return d&&`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`===m.key;});
+                return <tr key={i} style={{cursor:mInvoices.length>0?'pointer':'default'}} onClick={()=>mInvoices.length>0&&setDrillModal({title:m.label,subtitle:`${m.invoiceCount} fakturaer · ${m.qty} enheter`,invoices:mInvoices})}>
                   <td class="fw5">{m.label}</td>
                   <td style={{textAlign:'right'}} class="tsm">{m.invoiceCount}</td>
                   <td style={{textAlign:'right'}} class="fmo tsm">{m.qty.toLocaleString('nb-NO')}</td>
@@ -2721,13 +2889,14 @@ function Statistics(){
         </div>}
       </>}
     </div>
+    {drillModal&&<StatsDrillModal title={drillModal.title} subtitle={drillModal.subtitle} invoices={drillModal.invoices} onClose={()=>setDrillModal(null)}/>}
   </>;
 }
 
 function Shell(){
   const {conn,connErr,orders,dbReady,authUser,authLoading,logout}=useApp();
   const [page,setPage]=useState('products');
-  const [col,setCol]=useState(false);
+  const [col,setCol]=useState(window.innerWidth<768);
   const Active=COMPS[page]||Products;
   if(authLoading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12,color:'var(--txt3)',fontFamily:'var(--font)'}}>
     <i class="ti ti-loader spin" style={{fontSize:36}}/>
@@ -2744,8 +2913,8 @@ function Shell(){
     <aside class={`sb ${col?'c':''}`} aria-label="Navigasjon">
       <div class="sb-hd">
         <div class="logo" style={{padding:"2px 0",minHeight:36,display:"flex",alignItems:"center"}}>{col
-    ? <img src="/logo.png" alt="Ambio Water" style={{height:32,width:32,objectFit:"cover",objectPosition:"60% center",borderRadius:2}}/>
-    : <img src="/logo.png" alt="Ambio Water" style={{height:36,objectFit:"contain",maxWidth:130}}/>}</div>
+    ? <img src="/logo.png" alt="AW" style={{height:28,width:28,objectFit:"contain"}}/>
+    : <img src="/logo.png" alt="Ambio Water" style={{height:32,objectFit:"contain",maxWidth:140}}/>}</div>
         <button class="sb-tog" onClick={()=>setCol(v=>!v)} title={col?"Utvid meny":"Skjul meny"} aria-label={col?"Utvid meny":"Skjul meny"} aria-expanded={!col}><i class={`ti ${col?'ti-layout-sidebar-left-expand':'ti-layout-sidebar-left-collapse'}`}/></button>
       </div>
       <div class={`conn-pill ${conn==='ok'?'ok':conn==='error'?'err':'loading'}`}>
@@ -2771,8 +2940,8 @@ function Shell(){
     </aside>
     <main class="main" id="main-content" role="main" aria-label="Hovedinnhold">
       {/* Topbar with user menu */}
-      <div style={{position:'sticky',top:0,zIndex:11,background:'var(--sur)',borderBottom:'1px solid var(--bdr)',padding:'8px 20px',display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8}}>
-        {authUser?.devMode&&<div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",background:"#FEF3C7",border:"1px solid #F59E0B",borderRadius:4,fontSize:12,color:"#92400E",fontWeight:500}}><i class="ti ti-alert-triangle"/> Testmodus — Microsoft-innlogging deaktivert</div>}
+      <div class="topbar">
+        {authUser?.devMode&&<div class="testmodus-banner" style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"#FEF3C7",border:"1px solid #F59E0B",borderRadius:4,fontSize:12,color:"#92400E",fontWeight:500}}><i class="ti ti-alert-triangle" style={{flexShrink:0}}/><span class="hide-xs">Testmodus — Microsoft-innlogging deaktivert</span><span class="show-xs">Testmodus</span></div>}
         <UserMenu/>
       </div>
       <Active/>
