@@ -1044,7 +1044,8 @@ function Products(){
 }
 
 function Suppliers(){
-  const {suppliers,loading,fetchSuppliers,spApproved,spData,spConfigured,spLoading,syncSharePoint}=useApp();
+  const {suppliers,loading,fetchSuppliers,spApproved,spData,spConfigured,spLoading,syncSharePoint,orders}=useApp();
+  const [orderDetail,setOrderDetail]=useState(null);
   const [search,setSearch]=useState('');
   const [detail,setDetail]=useState(null);
   const filtered=suppliers.filter(s=>!search||s.name?.toLowerCase().includes(search.toLowerCase())||String(s.supplierNumber||'').includes(search)||(s.organizationNumber||'').includes(search));

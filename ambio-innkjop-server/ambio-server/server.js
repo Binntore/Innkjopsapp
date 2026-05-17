@@ -913,19 +913,38 @@ app.get('/api/sharepoint/config', (req, res) => {
 // Path for persisting SP config
 const SP_CONFIG_FILE = process.env.SP_CONFIG_PATH || path.join(__dirname, 'sharepoint-config.json');
 
+// Load SP config now that SP_CONFIG_FILE is defined
+// (called here, not earlier, to avoid 'before initialization' error)
+
 function loadSpConfig() {
+  // Seed: copy bundled config to persistent volume if PA URL missing
+  try {
+    const bundled = path.join(__dirname, 'sharepoint-config.json');
+    const dir = path.dirname(SP_CONFIG_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    let needsSeed = !fs.existsSync(SP_CONFIG_FILE);
+    if (!needsSeed) {
+      try { if (!JSON.parse(fs.readFileSync(SP_CONFIG_FILE,'utf8')).powerAutomateUrl) needsSeed = true; }
+      catch { needsSeed = true; }
+    }
+    if (needsSeed && fs.existsSync(bundled)) {
+      fs.copyFileSync(bundled, SP_CONFIG_FILE);
+      console.log('[SP] Konfigurasjonsfil kopiert til', SP_CONFIG_FILE);
+    }
+  } catch(e) { console.error('[SP] Seed feilet:', e.message); }
+  // Load config from disk
   try {
     if (fs.existsSync(SP_CONFIG_FILE)) {
       const saved = JSON.parse(fs.readFileSync(SP_CONFIG_FILE, 'utf8'));
       Object.assign(SP_CONFIG, saved);
-      // Always override with confirmed correct field names from PA debug
-      // Display name: "Status" — Internal PA name: "Godkjent"
       SP_CONFIG.nameColumn   = 'Leverand_x00f8_rnavn';
       SP_CONFIG.statusColumn = 'Godkjent';
-      console.log('[SP] Konfigurasjon lastet — PA feltnavnene bekreftet: Leverand_x00f8_rnavn / Godkjent');
+      console.log('[SP] Konfigurasjon lastet — PA URL:', SP_CONFIG.powerAutomateUrl ? 'OK ✓' : 'MANGLER!');
     }
   } catch(e) { console.error('[SP] Kunne ikke laste konfigurasjon:', e.message); }
 }
+
+loadSpConfig(); // Initialize SP config
 
 function saveSpConfig() {
   try {
@@ -944,9 +963,6 @@ function saveSpConfig() {
     }, null, 2), 'utf8');
   } catch(e) { console.error('[SP] Kunne ikke lagre konfigurasjon:', e.message); }
 }
-
-// Load saved config on startup
-loadSpConfig();
 
 app.post('/api/sharepoint/config', (req, res) => {
   const { tenantId, clientId, clientSecret, siteId, listName, statusColumn, nameColumn, orgNrColumn, powerAutomateUrl } = req.body;
