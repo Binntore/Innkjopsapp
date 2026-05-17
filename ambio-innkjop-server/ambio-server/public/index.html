@@ -1572,7 +1572,10 @@ function LoginScreen({error}){
   return <div class="login-screen">
     <div class="login-card">
       <div class="login-logo" style={{padding:'8px 0 4px'}}>
-        <img src="/logo.png" alt="Ambio Water" style={{height:56,objectFit:'contain'}}/>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 52" style={{height:"52px",width:"auto"}}>
+          <circle cx="148" cy="9" r="8" fill="#F5A623"/>
+          <text x="2" y="48" fontFamily="DM Sans,Arial,sans-serif" fontSize="36" fontWeight="900" fill="#F5A623" letterSpacing="2">water</text>
+        </svg>
       </div>
       <div class="login-title" style={{marginTop:8}}>Innkjøp og varer</div>
       <div class="login-sub">Logg inn med din Ambio Microsoft 365-konto</div>
@@ -2743,7 +2746,9 @@ function Shell(){
     <GdprBanner/>
     <aside class={`sb ${col?'c':''}`} aria-label="Navigasjon">
       <div class="sb-hd">
-        <div class="logo" style={{padding:"2px 0",minHeight:36,display:"flex",alignItems:"center"}}>{col?<img src="/logo.png" alt="Ambio" style={{height:24,objectFit:"contain",filter:"brightness(0) invert(1) sepia(1) saturate(3) hue-rotate(5deg)"}}/>:<img src="/logo.png" alt="Ambio Water" style={{height:28,objectFit:"contain",filter:"brightness(0) invert(1) sepia(1) saturate(3) hue-rotate(5deg)",maxWidth:110}}/>}</div>
+        <div class="logo" style={{padding:"2px 0",minHeight:36,display:"flex",alignItems:"center"}}>{col
+    ? <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40" style={{height:"26px",width:"auto"}}><circle cx="26" cy="6" r="4" fill="#F5A623"/><text x="0" y="36" fontFamily="DM Sans,Arial,sans-serif" fontSize="32" fontWeight="900" fill="#F5A623">w</text></svg>
+    : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 40" style={{height:"26px",width:"auto"}}><circle cx="118" cy="6" r="5" fill="#F5A623"/><text x="2" y="36" fontFamily="DM Sans,Arial,sans-serif" fontSize="26" fontWeight="900" fill="#F5A623" letterSpacing="1">water</text></svg>}</div>
         <button class="sb-tog" onClick={()=>setCol(v=>!v)} title={col?"Utvid meny":"Skjul meny"} aria-label={col?"Utvid meny":"Skjul meny"} aria-expanded={!col}><i class={`ti ${col?'ti-layout-sidebar-left-expand':'ti-layout-sidebar-left-collapse'}`}/></button>
       </div>
       <div class={`conn-pill ${conn==='ok'?'ok':conn==='error'?'err':'loading'}`}>
